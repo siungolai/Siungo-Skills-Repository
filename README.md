@@ -20,15 +20,6 @@
 Siungo-Skills-Repository/
 ├── LICENSE
 ├── README.md
-├── hk-gov-correspondence/
-│   ├── SKILL.md                      # 技能主文件：核心原则、执行流程、输入/输出定义、强制规则
-│   └── references/
-│       ├── format-spec.md            # 横式公函 14 组件 / 直式公函 / 信封 / 联署信
-│       ├── address-terms.md          # 称谓用语全表
-│       ├── mainland-notes.md         # 致内地政府单位公函 8 项注意事项
-│       ├── email-notes.md            # 公务电邮结构与 11 项注释
-│       ├── common-phrases.md         # 公函常见用语（中英对照精选）
-│       └── examples-index.md         # 原书 107 例分类索引
 └── commit-report/
     └── SKILL.md                      # 技能主文件：审阅门流程、回应路径协议、安全边界
 ```
@@ -36,5 +27,3 @@ Siungo-Skills-Repository/
 ## License
 
 [MIT](./LICENSE) © 2026 烧鹅濑
-
-技能正文蒸馏自香港公务员事务局法定语文事务部《政府公文写作手册（第三版）·公函》，原书版权归原机构所有；本仓库内容仅作个人学习与写作辅助用途。

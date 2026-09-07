@@ -2,6 +2,9 @@
 name: commit-report
 description: Git 提交审阅门技能。对目标仓库执行"分析变更 → 匹配既有提交风格生成 commit 信息 → 展示变更总揽与提交信息全文供用户审阅 → 确认后提交（可选推送）"的完整流程。当用户要求提交代码、commit、提交并推送、push 上去，或要求"先看看改了什么再提交"时使用。与用户对话使用简体中文；commit 信息语言跟随仓库既有风格。
 agent_created: true
+version: 1.0
+last_updated: 2026-09-07
+author: siungolai
 ---
 
 # commit-report：审阅门式 Git 提交
