@@ -57,4 +57,4 @@
 
 ## 陷阱目录
 
-完整 25+ 条项目特定陷阱目录见 `../common/pitfalls-catalog.md`（涵盖游戏与 Web 设计文档工作）。
+完整项目特定陷阱目录见 `../common/pitfalls-catalog.md`（涵盖游戏与 Web 设计文档工作，持续扩充）。

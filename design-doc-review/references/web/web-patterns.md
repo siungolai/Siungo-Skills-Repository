@@ -74,4 +74,4 @@ Web 开发项目（API 设计、数据模型、系统架构、PRD）设计文档
 - 文档里硬编码本该由配置驱动的值
 - 缺示例：每个 API endpoint 至少要有一个请求/响应示例
 
-完整 25+ 条项目特定陷阱目录见 `../common/pitfalls-catalog.md`。
+完整项目特定陷阱目录见 `../common/pitfalls-catalog.md`（含 Web 与游戏项目，持续扩充）。

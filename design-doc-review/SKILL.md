@@ -1,9 +1,10 @@
 ---
 name: design-doc-review
 description: "设计文档评审与编写：审阅/审计/编写/重构/同步设计文档（策划案、API 设计、数据模型、系统架构、PRD）时使用；覆盖全篇审计、数值脚本核验、交叉引用完整性、提案先行与同步校验。Design doc review: audit, verify, author, restructure, and sync design documents — full-doc audit, numeric script verification, cross-reference integrity, proposal-first flow."
-version: 2.0.0
+version: 2.1.0
 author: siungolai
 license: MIT
+last_updated: 2026-09-08
 platforms: [linux, macos, windows]
 metadata:
   hermes:
@@ -148,7 +149,7 @@ metadata:
 
 ## 通用陷阱
 
-以下 5 条贯穿所有设计文档工作；具体项目级陷阱见 `references/common/pitfalls-catalog.md`（45 条）。
+以下 5 条贯穿所有设计文档工作；具体项目级陷阱见 `references/common/pitfalls-catalog.md`（持续扩充）。
 
 1. **单文件补丁不完整。** 只改一个文件就宣布完成，会漏掉其他文档中的陈旧内容（同步文件、README、references）。定稿前务必 grep 全项目树找残留。
 
@@ -174,4 +175,11 @@ metadata:
 
 ### 📄 通用
 
-- `common/pitfalls-catalog.md` — 45 条项目级陷阱（代码/脚本、markdown 编辑、同步/并发、文档重构、数据/模型、验证）。是 SKILL.md 通用陷阱 5 条的实测案例库。
+- `common/pitfalls-catalog.md` — 项目级陷阱库（代码/脚本、markdown 编辑、同步/并发、文档重构、数据/模型、验证）。是 SKILL.md 通用陷阱 5 条的实测案例库。
+
+## 修订记录
+
+| 版本 | 日期 | 变更 |
+|---|---|---|
+| 2.1.0 | 2026-09-08 | 一致性修复：合并 pitfalls-catalog 两条重复条目（原 #36/#41，现重排为连续 1–43）；全库数量引用（SKILL.md、web/game-patterns、pitfalls 标题）不再写死条数，改为"持续扩充"措辞，杜绝数值漂移复发；补充修订记录表 |
+| 2.0.0 | — | 引入「脚本核验要求」「同步检查清单」等强化规则（历史无变更记录，自本版起补齐） |
