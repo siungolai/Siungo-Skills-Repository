@@ -12,10 +12,10 @@
 
 | 技能 | 版本 | 简介 | 结构 |
 |---|---|---|---|
-| [`commit-auto`](./commit-auto/) | 1.2 | 节奏驱动的自动提交技能。执行「授权判定 → 识别功能完成信号 → 切分提交范围（显式路径清单、垃圾排除）→ 读盘复用 commit-report 的审阅门生成并执行提交」流程；会话级授权一次覆盖整段节奏、不逐笔打断，push 不在范围内；内置硬红线（凭据零入库、破坏性 git 操作）与干跑模式；随附领域词汇表与 5 条 ADR。 | SKILL.md + references/ + CONTEXT.md + docs/adr/ |
-| [`commit-report`](./commit-report/) | 1.2 | Git 提交审阅门技能。执行"分析变更 → 匹配既有提交风格生成 commit 信息 → 展示变更总揽与提交信息供审阅 → 确认后提交（可选推送）"流程；内置三选项回应路径协议、敏感文件与大文件预警、执行通道降级（git 故障时经 GitHub API 单次提交，随附通用脚本）、完成后报告与安全边界（禁 force push、禁 --no-verify 等）。 | SKILL.md + scripts/ |
-| [`design-doc-review`](./design-doc-review/) | 2.1.0 | 面向公开分发的通用设计文档审计技能。覆盖全篇审计、数值脚本核验、交叉引用完整性、提案先行、文档重构验证与同步校验；`references/` 保留按领域分层的通用模式与持续扩充的项目级陷阱目录（条数不写死，避免引用漂移）。 | SKILL.md + references/ |
-| [`deploy-report`](./deploy-report/) | 1.0 | 部署审阅门技能。执行"变更盘点 → 部署方案审阅（变更总揽/步骤/备份与回滚路径/验证计划）→ 确认后执行上线 → 三档验收（基础/冒烟/回归）→ 完成报告"流程；部署档案驱动（gitignore 私有档案）、git/无 git 双轨兼容、失败不自动回滚、凭据零入库硬性边界（附发布前敏感自检清单）。 | SKILL.md + references/ |
+| [`commit-auto`](./commit-auto/) | 1.4 | 节奏驱动的自动提交技能。执行「授权判定 → 识别功能完成信号 → 切分提交范围（显式路径清单、垃圾排除）→ 读盘复用 commit-report 的审阅门生成并执行提交」流程；会话级授权一次覆盖整段节奏、不逐笔打断，push 不在范围内；内置硬红线（凭据零入库、破坏性 git 操作）与干跑模式；随附领域词汇表与 5 条 ADR。 | SKILL.md + references/ + CONTEXT.md + docs/adr/ |
+| [`commit-report`](./commit-report/) | 1.3 | Git 提交审阅门技能。执行"分析变更 → 匹配既有提交风格生成 commit 信息 → 展示变更总揽与提交信息供审阅 → 确认后提交（可选推送）"流程；内置三选项回应路径协议、敏感文件与大文件预警、执行通道降级（git 故障时经 GitHub API 单次提交，随附通用脚本）、完成后报告与安全边界（禁 force push、禁 --no-verify 等）。 | SKILL.md + scripts/ + references/ |
+| [`design-doc-review`](./design-doc-review/) | 2.1.1 | 面向公开分发的通用设计文档审计技能。覆盖全篇审计、数值脚本核验、交叉引用完整性、提案先行、文档重构验证与同步校验；`references/` 保留按领域分层的通用模式与持续扩充的项目级陷阱目录（条数不写死，避免引用漂移）。 | SKILL.md + references/ |
+| [`deploy-report`](./deploy-report/) | 1.1 | 部署审阅门技能。执行"变更盘点 → 部署方案审阅（变更总揽/步骤/备份与回滚路径/验证计划）→ 确认后执行上线 → 三档验收（基础/冒烟/回归）→ 完成报告"流程；部署档案驱动（gitignore 私有档案）、git/无 git 双轨兼容、失败不自动回滚、凭据零入库硬性边界（附发布前敏感自检清单）。 | SKILL.md + references/ |
 
 ## 目录结构
 
@@ -27,21 +27,25 @@ Siungo-Skills-Repository/
 │   ├── SKILL.md                      # 技能主文件：授权判定、完成信号、范围切分、红线、干跑
 │   ├── CONTEXT.md                    # 领域词汇表（提交单元/提交节奏/功能完成信号/会话级授权…）
 │   ├── references/
-│   │   └── exclusions.md             # 垃圾排除清单与硬红线判定（凭据形态、破坏性 git 操作）
+│   │   ├── exclusions.md             # 垃圾排除清单与硬红线判定（凭据形态、破坏性 git 操作）
+│   │   └── version.md                # 修订记录（版本历史，按时间倒序）
 │   └── docs/adr/                     # 决策记录 0001–0005（分层、会话授权、push 边界…）
 ├── commit-report/                    # 审阅门：变更能否进入仓库
 │   ├── SKILL.md                      # 技能主文件：审阅门流程、回应路径协议、安全边界
+│   ├── references/
+│   │   └── version.md                # 修订记录（版本历史，按时间倒序）
 │   └── scripts/
 │       └── push-via-api.py           # 降级推送脚本：git 直连故障时经 GitHub API 重建提交链
 ├── design-doc-review/
 │   ├── SKILL.md
-│   └── references/                   # 领域知识与模式参考（common/web/game 分层）
+│   └── references/                   # 领域知识与模式参考（common/web/game 分层）+ version.md 修订记录
 └── deploy-report/                    # 部署审阅门：变更何时进入线上
     ├── SKILL.md                      # 技能主文件：部署审阅门流程、执行/验收/回滚、安全边界
     └── references/
         ├── deploy-profile.template.md # 部署档案字段模板（实例 gitignore，凭据指针式）
         ├── pitfalls-and-patterns.md   # 部署坑与模式库（原子替换/备份/构建/验证通道，脱敏）
-        └── publish-check.md           # 发布前敏感信息自检清单
+        ├── publish-check.md           # 发布前敏感信息自检清单
+        └── version.md                 # 修订记录（版本历史，按时间倒序）
 ```
 
 ## License

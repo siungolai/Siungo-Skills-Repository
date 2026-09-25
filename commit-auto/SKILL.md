@@ -2,7 +2,7 @@
 name: commit-auto
 description: 节奏驱动的自动提交：在已获会话级授权的会话中，每闭合一个提交单元（一个功能/一个阶段）就落一笔提交，不逐次打断；判定时机与范围后，读盘复用 commit-report 的审阅门流程生成并执行提交。push 不在范围内。未获会话级授权时不触发，也不替代 commit-report。
 agent_created: true
-version: 1.2
+version: 1.4
 last_updated: 2026-09-25
 author: siungolai
 ---
@@ -11,7 +11,7 @@ author: siungolai
 
 > ⚠️ **触发加载检查**：收到「自动提交 / 每完成一个功能就提交 / 不用每件事都问我」类意图，或处于已授权会话中某个功能刚闭合的时刻，**先确认本技能已加载**——若本技能不在当前会话可用技能列表（技能快照可能早于本技能安装/更新），先执行 `skills_list` 查证、再用 `skill_view(name='commit-auto')` 加载，然后按其流程执行。切忌在未加载技能的情况下自行提交。
 
-定位：与 `commit-report`、`deploy-report` 构成三段分工——本技能管变更**以什么节奏进入仓库**（何时提交、如何切分），`commit-report` 管变更**能否**进入仓库（审阅门与执行），`deploy-report` 管变更**何时**进入线上。节奏这一层是本技能的全部新增内容；执行环节读盘复用 `commit-report`，风格匹配、两区审阅模板、推送降级通道与安全边界都只有它那一份事实源。术语见 `CONTEXT.md`，决策理由见 `docs/adr/`。
+定位：与 `commit-report`、`deploy-report` 构成三段分工——本技能管变更**以什么节奏进入仓库**（何时提交、如何切分），`commit-report` 管变更**能否**进入仓库（审阅门与执行），`deploy-report` 管变更**何时**进入线上。节奏这一层是本技能的全部新增内容；执行环节读盘复用 `commit-report`，风格匹配、两区审阅模板、推送降级通道与安全边界都只有它那一份事实源。术语见 `CONTEXT.md`，决策理由见 `docs/adr/`，版本历史见 [`references/version.md`](references/version.md)。
 
 ## 一、授权（总开关）
 
@@ -72,6 +72,9 @@ author: siungolai
 ## 三、范围切分
 
 1. **显式路径清单**：以一个提交单元的文件清单为准，逐一列出路径。
+   - **路径一律用 `-z` 读**：`git status --porcelain=v1 -z --untracked-files=all`。默认输出会把含中文或空格的路径加引号并转成八进制转义（`"docs/0001-\350\212\202....md"`），按行切分拿到的是**假路径**，后续检查会静默落空。
+   - 在文件系统上核对时用不解释通配符的方式（PowerShell 用 `-LiteralPath`）。
+   - **每条路径都必须真实命中**：任何一条落空即判定「扫描不完整」，中止并报告。静默跳过会让 §五 的红线扫描留下盲区。
 2. **排除项**：按 `references/exclusions.md` 核对，命中的条目从提交范围剔除并计入报告。
 3. **`.gitignore`**：发现垃圾反复出现时只报告；补规则是独立一笔 `chore: .gitignore …` 提交单元，与功能提交分开——它可以在下一个提交单元闭合时一并提出，但不并入那笔功能提交的 diff。
 4. **未纳入清单**：列出未闭合单元、被排除的垃圾、被红线拦下的条目。
@@ -93,7 +96,7 @@ author: siungolai
 
 已获授权也拒绝自动执行，命中即中止并报告原因：
 
-1. **凭据零入库**——提交范围命中 `references/exclusions.md` 的凭据形态时中止；
+1. **凭据零入库**——按 `references/exclusions.md` 的凭据形态逐条核对 §三 解析出的**全部**路径（文件名与内容特征各扫一遍），命中即中止；任一路径解析失败同样中止，不跳过。
 2. **破坏性 git 操作**——`git init`、删除文件、`git clean`、`--no-verify`、force push、amend 或 rebase 已推送提交、`reset --hard`、`checkout -- .`。
 
 需要执行这些动作时，报告「这属于硬红线范围」，并请用户另行显式指示。
@@ -125,11 +128,3 @@ author: siungolai
 3. 未纳入清单；
 4. 与上游的关系（领先 N），并注明 push 未执行——需要推送时请显式指示；
 5. 发现 `.gitignore` 缺口或 `.git/` 内部污染时，作为独立建议列出。
-
-## 八、修订记录
-
-| 版本 | 日期 | 变更 |
-|---|---|---|
-| 1.2 | 2026-09-25 | 事实更正：commit-report／deploy-report 的 `disable-model-invocation` 实为 `false`（= 允许模型调用），据此重写 §四 读盘复用的理由（避免逐笔等待，而非「对方不可调用」）并同步 ADR-0001／ADR-0005 |
-| 1.1 | 2026-09-25 | 实战修订（dsh-lan-web 首测）：§四 补 Windows 已知陷阱——`.git/COMMIT_EDITMSG` 带 Hidden 属性时 Git for Windows 报 Permission denied，`attrib -h` 后重试 |
-| 1.0 | 2026-09-25 | 初版：会话级授权、功能完成信号四级判据、显式路径清单与垃圾排除、commit-report 读盘复用契约、硬红线、干跑模式 |

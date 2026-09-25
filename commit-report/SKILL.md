@@ -2,7 +2,7 @@
 name: commit-report
 description: Git 提交审阅门：commit/push/提交/推送/查看待提交改动前，先展示变更总揽与 commit 信息全文，经用户明确确认后才执行提交（可选项推送）。
 agent_created: true
-version: 1.2
+version: 1.3
 last_updated: 2026-09-25
 author: siungolai
 ---
@@ -11,7 +11,7 @@ author: siungolai
 
 > ⚠️ **触发加载检查**：收到任何「提交 / commit / 推送 / push / 先看看改了什么再提交」类意图时，**先确认本技能已加载**——若本技能不在当前会话可用技能列表（技能快照可能早于本技能安装/更新），先执行 `skills_list` 查证、再用 `skill_view(name='commit-report')` 加载，然后按其流程执行。切忌在未加载技能的情况下直接提交。
 
-定位：与内置 /commit 命令互补——本技能以**强制审阅门**为核心，用户看到变更总揽与 commit 信息全文并明确确认后，才执行提交。**push 默认不执行**，仅在用户明确选择时进行。
+定位：与内置 /commit 命令互补——本技能以**强制审阅门**为核心，用户看到变更总揽与 commit 信息全文并明确确认后，才执行提交。**push 默认不执行**，仅在用户明确选择时进行。版本历史见 [`references/version.md`](references/version.md)。
 
 ## 一、目标仓库定位与前置自检
 
@@ -110,11 +110,3 @@ author: siungolai
 2. **变更统计**：files changed / insertions / deletions；
 3. **推送验证**（若执行 push）：远端分支最新提交 SHA 与本地一致；降级通道报告 tree/commit/ref 三重 SHA 校验结果；有条件时附关键文件 blob SHA 比对结果；
 4. **执行通道说明**（git 或降级通道），供追溯。
-
-## 八、修订记录
-
-| 版本 | 日期 | 变更 |
-|---|---|---|
-| 1.2 | 2026-09-25 | 实战修订（dsh-lan-web 实测）：§五 新增「已知执行故障（Windows）」——`.git/COMMIT_EDITMSG` 带 Hidden 属性时 Git for Windows 报 Permission denied，`attrib -h` 后重试；并记录伴随的 `.git` 内 `._*` 垃圾引发 non-monotonic index |
-| 1.1 | 2026-09-07 | 实战修订：新增场景 B（本地领先上游的未推送提交审阅，两区模板）；触发加载检查（技能快照过期兜底）；push 前网络探测判定表；降级通道增强（中文/空格路径 -z、SHA 三重校验、tracking ref 同步）；随技能分发通用降级脚本 scripts/push-via-api.py；场景 B 历史提交改写边界（§6.6）；description 补充中文触发场景 |
-| 1.0 | 2026-09-07 | 初版：强制审阅门流程（分析 → 审阅展示 → 确认 → 提交/推送） |
