@@ -2,8 +2,8 @@
 name: commit-report
 description: Git 提交审阅门：commit/push/提交/推送/查看待提交改动前，先展示变更总揽与 commit 信息全文，经用户明确确认后才执行提交（可选项推送）。
 agent_created: true
-version: 1.1
-last_updated: 2026-09-07
+version: 1.2
+last_updated: 2026-09-25
 author: siungolai
 ---
 
@@ -91,6 +91,7 @@ author: siungolai
    - **本地 tracking ref 同步**：git 直连不通时 `git fetch` 同样失败，降级推送成功后需手动 `git update-ref refs/remotes/origin/<分支> <新sha>`，否则本地 `git status` 仍显示领先（假象）。
 4. **降级约束**：降级只改变传输手段，不改变审阅确认过的内容——仍为同一批提交、同一 message、同一文件范围；ref 更新 force=false。
 5. **空范围防护**：执行前校验确认范围非空；剔除后为空则报告并回到审阅，不产生空提交。
+6. **已知执行故障（Windows）**：`fatal: could not open '.git/COMMIT_EDITMSG': Permission denied`——该文件带 Windows Hidden 属性时 Git for Windows 写不进去（同一文件用 PowerShell／.NET 可正常写、`git config --local` 写 `.git/config` 也正常，可据此排除 ACL 与占用问题）。处置：`attrib -h .git\COMMIT_EDITMSG` 后重试本步骤。iCloud／外置盘同步过的仓库易带此属性，且常伴随 `.git` 内大量 `._*` 垃圾引发 `error: non-monotonic index`。
 
 ## 六、安全边界（硬性，任何路径下均适用）
 
@@ -114,5 +115,6 @@ author: siungolai
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| 1.2 | 2026-09-25 | 实战修订（dsh-lan-web 实测）：§五 新增「已知执行故障（Windows）」——`.git/COMMIT_EDITMSG` 带 Hidden 属性时 Git for Windows 报 Permission denied，`attrib -h` 后重试；并记录伴随的 `.git` 内 `._*` 垃圾引发 non-monotonic index |
 | 1.1 | 2026-09-07 | 实战修订：新增场景 B（本地领先上游的未推送提交审阅，两区模板）；触发加载检查（技能快照过期兜底）；push 前网络探测判定表；降级通道增强（中文/空格路径 -z、SHA 三重校验、tracking ref 同步）；随技能分发通用降级脚本 scripts/push-via-api.py；场景 B 历史提交改写边界（§6.6）；description 补充中文触发场景 |
 | 1.0 | 2026-09-07 | 初版：强制审阅门流程（分析 → 审阅展示 → 确认 → 提交/推送） |
