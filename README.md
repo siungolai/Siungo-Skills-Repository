@@ -2,7 +2,7 @@
 
 > siungo 的个人 Skill 仓库 — 自建 AI 智能体技能定义与领域规范（SKILL.md + references），持续更新中。
 
-![License](https://img.shields.io/badge/license-MIT-green) ![Skills](https://img.shields.io/badge/skills-5-blue)
+![License](https://img.shields.io/badge/license-MIT-green) ![Skills](https://img.shields.io/badge/skills-6-blue)
 
 ## 简介
 
@@ -12,6 +12,7 @@
 
 | 技能 | 版本 | 简介 | 结构 |
 |---|---|---|---|
+| [`agent-team-setup`](./agent-team-setup/) | 1.0.0 | DSH 智能体团队配置器。执行「读盘探测项目事实 → 判定席位与写作范围 → 展示团队契约（席位表/任务图/验证计划/停止条件）供用户确认 → 才组建成员并在共享任务板派活 → 编排、停滞裁决与打回 → 报告后解散」流程；内置 `web` 网页开发团队预设（含各席位 spawn prompt 骨架与验证命令探测顺序），随附团队模型、改派与依赖边纪律、宿主能力与上限的事实表。 | SKILL.md + references/ + CONTEXT.md |
 | [`commit-auto`](./commit-auto/) | 1.4.1 | 节奏驱动的自动提交技能。执行「授权判定 → 识别功能完成信号 → 切分提交范围（显式路径清单、垃圾排除）→ 读盘复用 commit-report 的审阅门生成并执行提交」流程；会话级授权一次覆盖整段节奏、不逐笔打断，push 不在范围内；内置硬红线（凭据零入库、破坏性 git 操作）与干跑模式；随附领域词汇表与 5 条 ADR。 | SKILL.md + references/ + CONTEXT.md + docs/adr/ |
 | [`commit-report`](./commit-report/) | 1.3.1 | Git 提交审阅门技能。执行"分析变更 → 匹配既有提交风格生成 commit 信息 → 展示变更总揽与提交信息供审阅 → 确认后提交（可选推送）"流程；内置三选项回应路径协议、敏感文件与大文件预警、执行通道降级（git 故障时经 GitHub API 单次提交，随附通用脚本）、完成后报告与安全边界（禁 force push、禁 --no-verify 等）。 | SKILL.md + scripts/ + references/ |
 | [`design-doc-review`](./design-doc-review/) | 2.2.0 | 面向公开分发的通用设计文档审计技能。覆盖全篇审计、数值脚本核验、交叉引用完整性、提案先行、文档重构验证与同步校验；`references/` 保留按领域分层的通用模式与持续扩充的项目级陷阱目录（条数不写死，避免引用漂移）。 | SKILL.md + references/ |
@@ -24,6 +25,14 @@
 Siungo-Skills-Repository/
 ├── LICENSE
 ├── README.md
+├── agent-team-setup/                 # 团队配置器：谁来做、各写哪些目录、按什么依赖边推进
+│   ├── SKILL.md                      # 技能主文件：事实探测、契约展示、组建派活、编排与裁决、安全边界
+│   ├── CONTEXT.md                    # 领域词汇表（席位/写范围/只读席位/团队契约/停滞/解散…）
+│   └── references/
+│       ├── team-model.md             # 团队模型：席位能力矩阵、写范围规则、任务链模板、spec 八段
+│       ├── dsh-constraints.md        # 宿主事实表：上限、生成接口参数、任务板 action 语义、错误码
+│       ├── presets/web.md            # web 预设：席位表、各席位 prompt 骨架、契约版式、验证命令探测
+│       └── version.md                # 修订记录（版本历史，按时间倒序）
 ├── commit-auto/                      # 节奏层：变更以什么节奏进入仓库
 │   ├── SKILL.md                      # 技能主文件：授权判定、完成信号、范围切分、红线、干跑
 │   ├── CONTEXT.md                    # 领域词汇表（提交单元/提交节奏/功能完成信号/会话级授权…）
