@@ -2,7 +2,7 @@
 
 > siungo 的个人 Skill 仓库 — 自建 AI 智能体技能定义与领域规范（SKILL.md + references），持续更新中。
 
-![License](https://img.shields.io/badge/license-MIT-green) ![Skills](https://img.shields.io/badge/skills-6-blue)
+![License](https://img.shields.io/badge/license-MIT-green) ![Skills](https://img.shields.io/badge/skills-8-blue)
 
 ## 简介
 
@@ -17,6 +17,8 @@
 | [`commit-report`](./commit-report/) | 1.3.1 | Git 提交审阅门技能。执行"分析变更 → 匹配既有提交风格生成 commit 信息 → 展示变更总揽与提交信息供审阅 → 确认后提交（可选推送）"流程；内置三选项回应路径协议、敏感文件与大文件预警、执行通道降级（git 故障时经 GitHub API 单次提交，随附通用脚本）、完成后报告与安全边界（禁 force push、禁 --no-verify 等）。 | SKILL.md + scripts/ + references/ |
 | [`design-doc-review`](./design-doc-review/) | 2.2.0 | 面向公开分发的通用设计文档审计技能。覆盖全篇审计、数值脚本核验、交叉引用完整性、提案先行、文档重构验证与同步校验；`references/` 保留按领域分层的通用模式与持续扩充的项目级陷阱目录（条数不写死，避免引用漂移）。 | SKILL.md + references/ |
 | [`deploy-report`](./deploy-report/) | 1.1.1 | 部署审阅门技能。执行"变更盘点 → 部署方案审阅（变更总揽/步骤/备份与回滚路径/验证计划）→ 确认后执行上线 → 三档验收（基础/冒烟/回归）→ 完成报告"流程；部署档案驱动（gitignore 私有档案）、git/无 git 双轨兼容、失败不自动回滚、凭据零入库硬性边界（附发布前敏感自检清单）。 | SKILL.md + references/ |
+| [`esp32-firmware-bringup`](./esp32-firmware-bringup/) | 1.0.0 | ESP32 固件 bringup 与硬件诊断技能。执行「需求冻结 → 硬件事实采集（记录实测读数而非规格书参数）→ bringup 阻塞前置（地址应答 / 单路不互扰 / 拔外设节拍不漂移）→ 节拍与驱动实现（非阻塞 + 从机离线保护）→ 验收与长跑」流程；内置诊断阶梯（电源真值 → 万用表通断 → 总线静态电平 → 地址扫描 → 错误码判读 → 才看固件）、本机硬件速查（GPIO 禁脚 / 地址 / 上拉归属）、四份器件专项 reference、日志与凭据约定、安全边界（先接线后上电、5V 电平先量再连、不重复加上拉）。 | SKILL.md + references/ + CONTEXT.md |
+| [`reference-archive`](./reference-archive/) | 1.0.0 | 官方资料参考归档技能。执行「规划归档骨架 → 固化一手资料（文档页转 Markdown + 图片本地化 + 上游仓库与发布资产镜像）→ 四路交叉核对硬件事实 → 官方更新后做增量对账 → 四项归档自检」流程；内置三档结论定级与不确定项纪律、位图接口表与原理图网表的还原方法、纯标准库脚本（网页转 MD / 链接与资源自检 / 目录树 sha1 对账）；随附 ESP32-S3-RLCD-4.2 实例与 2 份 ADR。 | SKILL.md + references/ + CONTEXT.md + docs/adr/ + scripts/ |
 | [`skill-authoring`](./skill-authoring/) | 1.0.0 | 自建技能编写规范。新建或改造技能时执行「查重定界 → 定骨架 → 写 SKILL.md → 落 references → 自检（check-skills.py + publish-check）→ 同步到 ~/.dsh/skills/ → 更新 README 与版本表」流程；条文按「必须（M）/ 默认（D）/ 禁止（P）」逐条编号（见 `references/standard.md`），随附场景化自检清单、四份模板（SKILL.md / version.md / CONTEXT.md / ADR）与只读检查脚本；只管"规范"，不管"句子该怎么写"——那属于上游技能 `writing-for-agents`。 | SKILL.md + references/ + scripts/ |
 
 ## 目录结构
@@ -60,6 +62,31 @@ Siungo-Skills-Repository/
 │       ├── pitfalls-and-patterns.md   # 部署坑与模式库（原子替换/备份/构建/验证通道，脱敏）
 │       ├── publish-check.md           # 发布前敏感信息自检清单
 │       └── version.md                 # 修订记录（版本历史，按时间倒序）
+├── esp32-firmware-bringup/            # 固件层：规格书参数如何变成本机实测事实
+│   ├── SKILL.md                      # 技能主文件：bringup 优先五步流程、诊断阶梯、硬件速查、安全边界
+│   ├── CONTEXT.md                    # 领域词汇表（bringup/拓扑/节拍/从机/物理层/判读/离线保护…）
+│   └── references/
+│       ├── hardware-facts.md          # 本机硬件速查：板子、GPIO 禁脚、编译固定段、WS2812 判读、资源口径
+│       ├── i2c-bus-cookbook.md        # I2C 总线手册：错误码判读、上拉归属、事务分块、5V 电平转换选型
+│       ├── ssd1306-driver-notes.md    # SSD1306 驱动要点：显存布局、初始化序列、事务分块、字模方向
+│       ├── sensor-protocol-notes.md   # 传感器协议要点：DHT11 时序、位判决自校准、错误码与物理故障对应
+│       ├── display-multiplexer-notes.md # 多路复用与显示调度：PCA9548A 选通字节、STOP 生效、刷新分层
+│       ├── diagnostic-tools.md        # 诊断工具台：七个工具用法、诊断阶梯六层、日志判读约定
+│       └── version.md                 # 修订记录（版本历史，按时间倒序）
+├── reference-archive/                 # 归档层：官方散落资料如何固化成可回溯的本地归档
+│   ├── SKILL.md                      # 技能主文件：归档骨架、一手资料固化、事实交叉验证、增量对账、自检、安全边界
+│   ├── CONTEXT.md                    # 领域词汇表（归档/原文存档/一手资料镜像/整理文档/出处标记/不确定项/对账…）
+│   ├── references/
+│   │   ├── archive-layout.md         # 归档骨架细则：目录职责、编号规则、文件头格式、索引必备五块、固件清单、镜像取舍
+│   │   ├── cross-validation.md       # 交叉验证方法：四条取证路径各自怎么做、读图与网表的坑、结论定级、冲突处理
+│   │   ├── scripts.md                # 三个脚本的用途、参数、已知局限与使用纪律
+│   │   ├── rlcd-4.2-case.md          # 实例：一次真实归档的完整记录（五坑 + 对账实例 + 不确定项形态）
+│   │   └── version.md                # 修订记录（版本历史，按时间倒序）
+│   ├── scripts/
+│   │   ├── html-to-markdown.py       # 文档站渲染页 → Markdown，图片本地化，站点常量外置到 JSON 配置
+│   │   ├── check-links.py            # 归档自检：缺失引用 / 未引用资源 / 外链清单
+│   │   └── snapshot-diff.py          # 目录树逐文件 sha1 对账：新增 / 删除 / 变更 / 无变化
+│   └── docs/adr/                     # 决策记录 0001–0002（文件三分类互不混装、脚本只保留三个核心）
 └── skill-authoring/                  # 规范层：自建技能怎么写
     ├── SKILL.md                      # 技能主文件：编写/改造流程、硬红线、自检与同步
     ├── references/
