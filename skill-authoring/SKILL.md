@@ -2,8 +2,8 @@
 name: skill-authoring
 description: 本仓库自建 skill 的创建与修改规范：新建 skill、改写 SKILL.md、增改 references/ 或 scripts/、更新 README 技能表、把技能同步到 ~/.dsh/skills/ 时使用。
 agent_created: true
-version: 1.0.0
-last_updated: 2026-10-03
+version: 1.1.1
+last_updated: 2026-10-24
 author: siungolai
 ---
 
@@ -13,7 +13,7 @@ author: siungolai
 
 定位：本技能管「技能该怎么写」——骨架、frontmatter、编号与引用、版本记录、公开前门槛、仓库与用户级副本的同步。**「句子该怎么写」不在这里**：措辞、指针措辞、信息分层、完成判据的写法交给上游技能 `writing-for-agents`（只引用，不复制其条文）。完整条文见 [`references/standard.md`](references/standard.md)（M 必须 / D 默认 / P 禁止），逐场景勾选见 [`references/checklist.md`](references/checklist.md)，骨架与模板见 [`references/templates.md`](references/templates.md)。版本历史见 [`references/version.md`](references/version.md)。
 
-**适用范围**：本仓库内的自建技能。`~/.dsh/skills/` 下另有 29 个上游技能、`handoff-doc` 等非本仓库技能，以及随应用捆绑的技能——**均不受本规范管辖、不纳入同步范围**，名单与来源见 [`references/external-skills.md`](references/external-skills.md)。
+**适用范围**：本仓库内的自建技能。`~/.dsh/skills/` 下的上游技能（mattpocock 系列、`glue-engineer` 等）、`dsh-tui-guide` 等随包技能，以及随应用捆绑的技能——**均不受本规范管辖、不纳入同步范围**，名单与来源见 [`references/external-skills.md`](references/external-skills.md)。
 
 ## 1. 何时使用
 
