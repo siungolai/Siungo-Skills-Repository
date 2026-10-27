@@ -16,11 +16,14 @@
     P7  references/ 无孤儿文件（每个文件在 SKILL.md 里有 pointer）
     D4/D5 README 技能表、版本、目录结构块、徽章数字与磁盘一致
 
+被 git 排除（.gitignore / .git/info/exclude）的技能目录视为本地私有，跳过全部检查。
+
 只读脚本：不修改任何文件。退出码 0 = 全绿，1 = 有 FAIL。
 """
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -335,6 +338,16 @@ def check_readme(repo, skill_names):
         record("README", False, "M7", "README 链接指向不存在的目录：" + "、".join(unused_links))
 
 
+def git_ignored(repo, name):
+    """被 git 排除的技能目录属本地私有（不入库、不推送），不参与仓库一致性检查。"""
+    try:
+        proc = subprocess.run(["git", "-C", str(repo), "check-ignore", "-q", name],
+                              capture_output=True)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return proc.returncode == 0
+
+
 def main():
     ap = argparse.ArgumentParser(description="按 skill-authoring 的条文检查本仓库技能")
     ap.add_argument("--repo", default=None, help="仓库根目录（默认取本脚本向上两级）")
@@ -344,11 +357,15 @@ def main():
         print(f"× 找不到仓库根目录：{repo}")
         return 2
 
-    skill_dirs = sorted(d for d in repo.iterdir() if d.is_dir() and not d.name.startswith(".") and (d / "SKILL.md").exists())
+    candidates = sorted(d for d in repo.iterdir() if d.is_dir() and not d.name.startswith(".") and (d / "SKILL.md").exists())
+    private = [d.name for d in candidates if git_ignored(repo, d.name)]
+    skill_dirs = [d for d in candidates if d.name not in private]
     stray = sorted(d.name for d in repo.iterdir() if d.is_dir() and not d.name.startswith(".") and not (d / "SKILL.md").exists())
 
     print(f"# check-skills.py —— {repo}")
     print(f"# 检查 {len(skill_dirs)} 个技能：{', '.join(d.name for d in skill_dirs)}")
+    if private:
+        print(f"# 注意：以下技能目录被 git 排除（本地私有，不入库、不推送），已跳过 —— {', '.join(private)}")
     if stray:
         print(f"# 注意：以下目录不含 SKILL.md，已跳过 —— {', '.join(stray)}")
     print()
