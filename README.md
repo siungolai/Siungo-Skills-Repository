@@ -2,7 +2,7 @@
 
 > siungo 的个人 Skill 仓库 — 自建 AI 智能体技能定义与领域规范（SKILL.md + references），持续更新中。
 
-![License](https://img.shields.io/badge/license-MIT-green) ![Skills](https://img.shields.io/badge/skills-9-blue)
+![License](https://img.shields.io/badge/license-MIT-green) ![Skills](https://img.shields.io/badge/skills-10-blue)
 
 ## 简介
 
