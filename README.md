@@ -18,7 +18,7 @@
 | [`design-doc-review`](./design-doc-review/) | 2.2.0 | 面向公开分发的通用设计文档审计技能。覆盖全篇审计、数值脚本核验、交叉引用完整性、提案先行、文档重构验证与同步校验；`references/` 保留按领域分层的通用模式与持续扩充的项目级陷阱目录（条数不写死，避免引用漂移）。 | SKILL.md + references/ |
 | [`deploy-report`](./deploy-report/) | 1.1.1 | 部署审阅门技能。执行"变更盘点 → 部署方案审阅（变更总揽/步骤/备份与回滚路径/验证计划）→ 确认后执行上线 → 三档验收（基础/冒烟/回归）→ 完成报告"流程；部署档案驱动（gitignore 私有档案）、git/无 git 双轨兼容、失败不自动回滚、凭据零入库硬性边界（附发布前敏感自检清单）。 | SKILL.md + references/ |
 | [`esp32-firmware-bringup`](./esp32-firmware-bringup/) | 1.0.0 | ESP32 固件 bringup 与硬件诊断技能。执行「需求冻结 → 硬件事实采集（记录实测读数而非规格书参数）→ bringup 阻塞前置（地址应答 / 单路不互扰 / 拔外设节拍不漂移）→ 节拍与驱动实现（非阻塞 + 从机离线保护）→ 验收与长跑」流程；内置诊断阶梯（电源真值 → 万用表通断 → 总线静态电平 → 地址扫描 → 错误码判读 → 才看固件）、本机硬件速查（GPIO 禁脚 / 地址 / 上拉归属）、四份器件专项 reference、日志与凭据约定、安全边界（先接线后上电、5V 电平先量再连、不重复加上拉）。 | SKILL.md + references/ + CONTEXT.md |
-| [`issue-pr-loop`](./issue-pr-loop/) | 1.0.0 | 一条 issue 走到合并的五步并行流水线。执行「按三条独立性判据开单（能单独跑门禁/合并/回滚）+ 四要素 → issue 里追评 plan 与复现结果 → 按『同文件永不同层』分层、每线一 worktree → PR 正文三段（问题/改动/验证）→ 派发文案脚本生成、新上下文给三段结论（结论/复核动作/证据）→ 串行排队合并 → 行为类改动换人真机回签」流程；内置标签队列（needs-repro/needs-fix/needs-live-verify）、门禁清单唯一事实源纪律、`Closes` 只给纯文档、四文件接手清单，随附实测基线与反例、领域词汇表与 1 条 ADR。 | SKILL.md + references/ + CONTEXT.md + docs/adr/ |
+| [`issue-pr-loop`](./issue-pr-loop/) | 2.0.0 | 所有改动只走 PR 的并行开发流水线。执行「三条独立性判据开单（能单独跑门禁/合并/回滚）+ 四要素 → issue 里追评 plan 与 PR 预期 → 按『同文件永不同层』分层、一 PR 一分支一 worktree → **开 PR 是唯一入口，正文五段（问题/改动/验证/门禁/回签）** → 门禁在 PR 上跑、合并前跑在最新基线 → 派发文案脚本生成、新上下文给三段结论（结论/复核动作/证据）→ 串行 squash 合并（七项检查）→ 行为类换人真机回签」流程；硬律是禁止直推主干（纯文档也照样开 PR，只免评审），并用三层机制落地（平台分支保护 / `pre-push` 拦推钩子 / 主干提交对账），内置标签队列、门禁清单唯一事实源、`Closes` 只给纯文档，随附 PR 契约、实测基线与反例、领域词汇表与 2 条 ADR。 | SKILL.md + references/ + CONTEXT.md + docs/adr/ |
 | [`reference-archive`](./reference-archive/) | 1.0.0 | 官方资料参考归档技能。执行「规划归档骨架 → 固化一手资料（文档页转 Markdown + 图片本地化 + 上游仓库与发布资产镜像）→ 四路交叉核对硬件事实 → 官方更新后做增量对账 → 四项归档自检」流程；内置三档结论定级与不确定项纪律、位图接口表与原理图网表的还原方法、纯标准库脚本（网页转 MD / 链接与资源自检 / 目录树 sha1 对账）；随附 ESP32-S3-RLCD-4.2 实例与 2 份 ADR。 | SKILL.md + references/ + CONTEXT.md + docs/adr/ + scripts/ |
 | [`skill-authoring`](./skill-authoring/) | 1.1.2 | 自建技能编写规范。新建或改造技能时执行「查重定界 → 定骨架 → 写 SKILL.md → 落 references → 自检（check-skills.py + publish-check）→ 同步到 ~/.dsh/skills/ → 更新 README 与版本表」流程；条文按「必须（M）/ 默认（D）/ 禁止（P）」逐条编号（见 `references/standard.md`），随附场景化自检清单、四份模板（SKILL.md / version.md / CONTEXT.md / ADR）与只读检查脚本；只管"规范"，不管"句子该怎么写"——那属于上游技能 `writing-for-agents`。仓库外技能台账（external-skills.md）区分 dsh 的 filesystem roots 与 pnpm 的 skills.dirs 两套扫描机制，并记录上游技能在本机的真实装载形态（本地 bundle + 原名软链）。 | SKILL.md + references/ + scripts/ |
 | [`skill-install-tui`](./skill-install-tui/) | 1.0.1 | 把上游或第三方 SKILL 装进本机 dsh-tui 会话并验证它真的生效。执行「先认准装载路径（两个 profile 的 bundle 列表独立、dsh-tui 的 skill-filesystem 被 disabled、rank 小者盖）→ 按来源二选一（路线 A npm 包式：双 profile 安装 + `pnpm approve` 授权 + 重启 TUI；路线 B 纯目录式：打本地 bundle，五个必备件）→ 五层验证（包自检 / provider 直跑 / dump-config 挂载 / 运行态 skill_search / 重名冲突，只有运行态算数）→ 按序排查」流程；内置六类症状排查（重启遗漏、profile 装错、skill_search 的 AND 语义假阴性、pnpm skills.dirs 与 dsh roots 两套机制、上游裸技能名不重写）与安全边界（上游零改、不擅自提交推送、凭据零入库、重启前确认影响面）。 | SKILL.md + references/ |
@@ -77,15 +77,16 @@ Siungo-Skills-Repository/
 │       ├── display-multiplexer-notes.md # 多路复用与显示调度：PCA9548A 选通字节、STOP 生效、刷新分层
 │       ├── diagnostic-tools.md        # 诊断工具台：七个工具用法、诊断阶梯六层、日志判读约定
 │       └── version.md                 # 修订记录（版本历史，按时间倒序）
-├── issue-pr-loop/                     # 队列层：工作怎么切、并行怎么跑、合并怎么排队
-│   ├── SKILL.md                      # 技能主文件：五步流程、开单判据、分层规则、评审三段、回签纪律、安全边界
-│   ├── CONTEXT.md                    # 领域词汇表（单子/四要素/执行线/分层/三段结论/回签/接手六步…）
+├── issue-pr-loop/                     # 改动入口层：改动怎么进主干、并行怎么跑、合并怎么排队
+│   ├── SKILL.md                      # 技能主文件：三条硬律、八阶段流程、合并七项检查、三层机制、安全边界
+│   ├── CONTEXT.md                    # 领域词汇表（PR/主干/直推/回滚单位/合并条件/对账/回签/接手六步…）
 │   ├── references/
-│   │   ├── flow.md                   # 流程细则：四要素表、拆分信号、plan 模板、worktree 命名、派发物料、回签模板
-│   │   ├── ledger-and-gates.md       # 标签台账、门禁清单唯一事实源、派发脚本形态、每轮收口三个数字
-│   │   ├── case-book.md              # 实测基线（5 天 502 次提交 / 存活 PR ≤10 / 合并中位 15.1 分钟）与三个反例
+│   │   ├── pr-contract.md            # PR 契约：标题规范、正文五段模板、生命周期、squash 回滚、通道堵点、分支保护、拦推钩子、对账
+│   │   ├── flow.md                   # 流程细则：四要素表、拆分信号、plan 模板、分层规则、派发物料、回签模板、记忆外置
+│   │   ├── ledger-and-gates.md       # 标签台账（含 needs-merge）、门禁清单唯一事实源、派发与拦推脚本、收口四个数字
+│   │   ├── case-book.md              # 实测基线（5 天 502 次提交 / 153 个 PR 合 151 个 / 合并中位 15.1 分钟）与四个反例
 │   │   └── version.md                # 修订记录（版本历史，按时间倒序）
-│   └── docs/adr/                     # 决策记录 0001（评审权外包给新上下文）
+│   └── docs/adr/                     # 决策记录 0001（评审权外包给新上下文）、0002（所有改动必须经 PR）
 ├── reference-archive/                 # 归档层：官方散落资料如何固化成可回溯的本地归档
 │   ├── SKILL.md                      # 技能主文件：归档骨架、一手资料固化、事实交叉验证、增量对账、自检、安全边界
 │   ├── CONTEXT.md                    # 领域词汇表（归档/原文存档/一手资料镜像/整理文档/出处标记/不确定项/对账…）
