@@ -1,0 +1,27 @@
+{
+  "baseline": "origin/main",
+  "reconcile": {
+    "baseline": "d8fc6978460c8537540c87f6aaad9eb40633a435",
+    "note": "基线之前的历史提交属规则建立前的存量，不追溯补 PR；基线之后输出必须为空。",
+    "cmd": "python3 scripts/check-issue-pr-loop.py --reconcile"
+  },
+  "gates": [
+    { "name": "skills-structure", "cmd": "python3 skill-authoring/scripts/check-skills.py", "required": true },
+    { "name": "issue-pr-loop-consistency", "cmd": "python3 scripts/check-issue-pr-loop.py", "required": true },
+    { "name": "reconcile-after-baseline", "cmd": "python3 scripts/check-issue-pr-loop.py --reconcile", "required": true },
+    { "name": "gates-json-parse", "cmd": "python3 -m json.tool scripts/gates.json", "required": true },
+    { "name": "hook-syntax", "cmd": "sh -n scripts/deny-main-push.sh", "required": true }
+  ],
+  "pr": {
+    "protect": ["main", "master", "slim"],
+    "merge": "squash",
+    "reviewers": "new-context",
+    "review_exempt": ["纯文档", "纯重构"],
+    "closes": ["纯文档", "纯重构"],
+    "branch_types": ["feat", "fix", "refactor", "docs", "test", "chore"]
+  },
+  "hooks": {
+    "entry": "scripts/deny-main-push.sh",
+    "install": ["cp scripts/deny-main-push.sh .git/hooks/pre-push", "chmod +x .git/hooks/pre-push"]
+  }
+}
