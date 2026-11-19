@@ -51,6 +51,8 @@ REQUIRED = {
         "默认代用户执行",
         "并行度自主裁量",
         "禁止绕过 PR",
+        "并发原语",
+        "顺序调用",
     ),
     "issue-pr-loop/CONTEXT.md": (
         "五样东西",
@@ -70,6 +72,8 @@ REQUIRED = {
         "feat / fix / refactor / docs / test / chore",
         "同文件永不同层",
         "并行度自主裁量",
+        "并发原语",
+        "顺序调用",
         "scripts/check-issue-pr-loop.py",
         "scripts/review_prompt.py",
     ),
