@@ -2,8 +2,8 @@
 name: agent-team-setup
 description: DSH 智能体团队配置器：用户要求「组个队 / 用团队做 / 分工开发」某个功能时，先探测项目事实、算出席位与任务链、把团队契约展示给用户确认，确认后才组建成员并在共享任务板上派活，ticket 闭合即解散；当前内置 `web` 一个预设。
 agent_created: true
-version: 1.0.0
-last_updated: 2026-10-03
+version: 1.0.1
+last_updated: 2026-11-19
 author: siungolai
 ---
 
@@ -38,7 +38,7 @@ author: siungolai
 
 1. **组队门槛**：功能需要同时改动 ≥2 个交付面（如前端与后端），或预计跨越 ≥3 个文件且有明确验收标准 → 组队。否则不组，说明理由后按常规流程直接做。
 2. **席位裁剪**：默认五席——你（Lead）+ `web-planner` + `web-frontend` + `web-backend` + `web-reviewer`（只读）；只有单一交付面时裁掉对侧开发席；可选槽 `web-data`、`web-docs` **最多开一个**（含你总上限 8 席，见 [`references/dsh-constraints.md`](references/dsh-constraints.md) 的 §1「Team 的形态」）。
-3. **`web-planner` 的保留判据**：用户已给现成 spec、或需求一句话就能穷尽时裁掉它，直接进构建。保留时它按 §5 的 Phase 1 产出 spec。
+3. **`web-planner` 的保留判据**：用户已给现成 spec、或需求一句话就能穷尽时裁掉它，直接进构建。保留时按 references/team-model.md §4 的 spec 结构产出。
 4. **写范围切法**（按目录切，逐目录点名到每个席位）：共享文件（配置、依赖清单、`README`、入口文件）**由你独占串行改**；构建产物与生成物不进任何人范围；每个文件恰好一个 owner。详见 [`references/team-model.md`](references/team-model.md)。
 5. **核对席位与任务链一一对应**：每个座位都有它认领的任务，每个任务都有 owner；`verify` 任务的 owner 不能是实现任务的 owner。
 
@@ -99,7 +99,7 @@ author: siungolai
 
 ## 9. 安全边界（硬性，任何路径下均适用）
 
-1. **不提交、不推送、不部署、不删远端**：团队只改工作区文件；提交与上线分别归 `commit-report` 与 `deploy-report`。
+1. **不提交、不推送、不部署、不删远端**：团队只改工作区文件。
 2. **凭据与私有信息零入库**：席位 `prompt`、任务描述、spec 与报告中不得出现密钥、token、连接串口令、内网地址与私有路径细节。
 3. **只在契约范围内动手**：不顺手改别人的文件、不清理无关文件、不临时加做未展示的任务；共享文件只能由你改。
 4. **不为通过而放宽标准**：不跳过验证、不把未复跑的命令写成已通过、不把审查意见悄悄降级。

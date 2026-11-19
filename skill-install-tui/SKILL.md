@@ -2,7 +2,7 @@
 name: skill-install-tui
 description: 把上游或第三方 SKILL 装进本机 dsh-tui 会话并验证它真的生效：装 npm 包式技能、给纯目录技能打本地 bundle、改 skill_search 查不到的问题时使用。
 agent_created: true
-version: 1.0.2
+version: 1.0.3
 last_updated: 2026-11-19
 author: siungolai
 ---
@@ -11,7 +11,7 @@ author: siungolai
 
 > ⚠️ **触发加载检查**：收到任何「装这个 SKILL / 装到 TUI 里 / 装好了但 skill_search 查不到 / 给技能打包」类意图时，**先确认本技能已加载**——若本技能不在当前会话的可用技能列表里（技能快照可能早于本技能安装或更新），先用当前环境的技能加载机制加载它，然后按其流程执行。切忌在未确认宿主装载路径的情况下直接照上游 README 的 `ln -s ~/.claude/skills` 动手。
 
-定位：与 `skill-authoring`（技能该怎么写）、`deploy-report`（变更何时上线）分工——本技能只管**把一个已成形的技能搬进本机 dsh 环境并让它被会话看见**，上游资产本身一个字不改。核心机制是「认准装载路径 → 两个 profile 都装 → 授权 → 重启 → 分层验证」，五层验证缺一层就不算装好。踩过的坑与判定细节见 [`references/pitfalls.md`](references/pitfalls.md)，版本历史见 [`references/version.md`](references/version.md)。
+定位：与 `skill-authoring`（技能该怎么写）、`deploy-report`（变更何时上线）分工——本技能只管**把一个已成形的技能搬进本机 dsh 环境并让它被会话看见**，上游资产本身一个字不改。核心机制是「认准装载路径 → 两个 profile 都装 → 授权 → 重启 → 分层验证」；④ 运行态命中是唯一生效判据，前三层只用于定位问题、不可互相替代（详见 §5）。踩过的坑与判定细节见 [`references/pitfalls.md`](references/pitfalls.md)，版本历史见 [`references/version.md`](references/version.md)。
 
 ## 1. 何时使用
 
@@ -107,7 +107,7 @@ dsh plugin --profile dsh-tui add <包名>
 | ④ 运行态 | 重启后 `skill_search '<词>'` + `skill_load <name>` | 命中并注入正文。**只有这一层算数** |
 | ⑤ 重名冲突 | 与 `~/.dsh/skills/` 的自建技能名对比 | 零重名；有重名时按 §2 的 rank 规则判断谁盖谁 |
 
-**理由**：前三层全绿而第四层查不到是完全可能的（没重启、scope 不可见、查询词不匹配），把④当成唯一验收标准才不会被假阳性骗过去。
+**理由**：前三层全绿而第四层查不到是完全可能的（没重启、scope 不可见、查询词不匹配），所以 §5 明确④ 是唯一生效判据。
 
 ## 6. 常见症状与排查
 
@@ -132,18 +132,18 @@ dsh plugin --profile dsh-tui add <包名>
 
 ### 6.4 `skills.dirs` 与 dsh 能否加载无关
 
-**判据**：pnpm 的 `skills.dirs` 指向 profile 相对目录（`/root/.dsh/profiles/<p>/.dsh/skills/`），它只服务 pnpm 的 approve 前置校验；dsh 的 filesystem roots 是另一套（project `.dsh/skills`=100 / project `.agents/skills`=200 / customSkillDirs=300 / `~/.dsh/skills`=400 / `~/.agents/skills`=500 / bundled=600），且 dsh 取技能名用 **frontmatter 的 `name`，不用目录名**。两者互不影响，别用一个的结论推另一个。
+**判据**：pnpm 的 `skills.dirs` 指向 profile 相对目录（`/root/.dsh/profiles/<p>/.dsh/skills/`），它只服务 pnpm 的 approve 前置校验；dsh 的 filesystem roots 是另一套（完整 rank 表见 `references/pitfalls.md` 「一、两套扫描机制」小节的 1.1）），且 dsh 取技能名用 **frontmatter 的 `name`，不用目录名**。两者互不影响，别用一个的结论推另一个。
 
 ### 6.5 上游构建脚本给技能名加前缀（`/原名` 无法调用的真凶）
 
-上游 npm 包的构建脚本 `dsh-plugin/scripts/copy-skills.mjs`（`const prefix = process.env.SKILL_PREFIX ?? 'zh-'`）会把每个 frontmatter `name:` 改成 `zh-<name>`，`rewrite-references.mjs` 再把正文里的 `/grilling` 改成 `/zh-grilling`——但**裸写的技能名不重写**：实测 `skills/grill-me/SKILL.md` 仍写 `` `grilling` ``、`grill-with-docs` 仍写 `` `grilling` `` 与 `` `domain-modeling` ``。于是 `/grill-me` 不存在（实际是 `/zh-grill-me`），而正文里的跨技能调用仍指向无前缀名。
+上游构建会给技能名加 `zh-` 前缀、且只重写带 `/` 的调用不重写裸名——症状、实测与「不改上游、以 `SKILL_PREFIX=''` 本地重建」的处置见 `references/pitfalls.md` §三。
 
 **判据**：遇到「上游 README 说调用 `/xxx` 但 TUI 里没有这个命令」时，先查 `list()` 里技能的真实 `name`，别急着怀疑安装。若确认是上游前缀所致，**不要改上游文件**（会被上游更新覆盖）——改用路线 B 打本地 bundle，以 `SKILL_PREFIX=''` 重跑上游同一套构建脚本，即可得到原名版；并在完成后报告里说明该调用在本机指向的名字。
 
 ## 7. 安全边界（硬性，任何路径下均适用）
 
 1. **上游技能内容零改**——本技能只负责搬运与验证。要改上游资产先说明理由并单独确认，否则下次 `dsh plugin add` 升级就被覆盖。
-2. **不擅自 commit / push**——仓库是公开仓库，推送即永久公开；直接调用本技能时的提交与推送要用户明确许可。PR 通道内的开 PR、合并、推送功能分支由 issue-pr-loop 默认代执行（v2.2.0 授权前提），不受本条约束；禁直推主干、禁绕过 PR、禁 force push 主干的护栏不变。
+2. **不擅自 commit / push**——仓库是公开仓库，推送即永久公开；直接调用本技能时的提交与推送要用户明确许可。PR 通道内的开 PR、合并、推送功能分支由 issue-pr-loop 默认代执行（见 issue-pr-loop/SKILL.md 动作授权前提段），不受本条约束；禁直推主干、禁绕过 PR、禁 force push 主干的护栏不变。
 3. **凭据与私有信息零入库**——写 bundle 的 README 与 `references/` 时不得带入 token、PAT、内网地址、带用户名的 host 别名；引用本机路径只写到目录层级，不写凭据文件名。
 4. **重启前先确认影响面**——TUI 进程可能正跑着别的会话，重启前说明会中断什么，不要静默 kill。
 5. **不把 `link:` 依赖指向临时目录**——`/tmp` 会被清理，bundle 必须落在持久路径（`/root/deepseekharness/Github/local-skill-bundles/`）。

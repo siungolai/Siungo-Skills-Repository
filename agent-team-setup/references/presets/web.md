@@ -8,7 +8,7 @@
 1. **默认五席**：`lead`（用户）+ `web-planner` + `web-frontend` + `web-backend` + `web-reviewer`（只读）。
 2. **裁开发席**：纯前端项目（静态站、组件库、仅对接既有 API）裁 `web-backend`；纯后端项目（无 UI 交付）裁 `web-frontend`。裁掉一侧后任务链只留一条实现分支。
 3. **裁 `web-planner`**：用户已给现成 spec、或需求一句话能穷尽时裁掉，直接进构建——省掉一轮访谈往返。
-4. **可选槽最多开一个**：有数据库/schema 变更开 `web-data`；交付物必须含用户文档开 `web-docs`。**开两个会撞上成员上限**（默认五席 + 2 = 7，含 Lead 正好触顶，上限读法见 [`dsh-constraints.md`](dsh-constraints.md) 的 §1）；确需第三个交付面时，把 `web-docs` 的活派给 `web-planner` 或由 Lead 自己写。
+4. **可选槽最多开一个**：有数据库/schema 变更开 `web-data`；交付物必须含用户文档开 `web-docs`。**开两个会撞上成员上限**；确需第三个交付面时，把 `web-docs` 的活派给 `web-planner` 或由 Lead 自己写。
 5. **不组队**：改动只有一个文件、单点 bug、纯文案调整，或不是开发任务 → 说明理由后按常规流程直接做。
 
 ## §2 席位表

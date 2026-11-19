@@ -4,6 +4,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| 2.1.1 | 2026-11-19 | 去冗余：授权前提的过期版本号改为指向 issue-pr-loop 现行动作授权前提段，避免再次漂移；privacy-scan.md 删与 §2 第 1 步重复的「先读托管判定」段。 |
 
 | 2.1.0 | 2026-11-19 | 随附 `push-via-api.py` 修复 P1/P2 缺陷：blob 改走无 `text=True` 的字节通道（`git_bytes`）以正确处理二进制与 CRLF；提交链重建收集全部 parent、`rev-list --topo-order`、第一父不符即拒绝，修 merge 链重建失败；检出 `gpgsig`/`encoding` 头即提示改用 PR 通道；无上游须显式给起始提交，默认分支从 HEAD 推导并硬拒 main/master/slim；`strip_suffix` 兼容旧 Python，docstring 与 `-F` 描述纠偏。description 与定位段补作用域说明：审阅门约束直接调用本技能的提交，PR 通道内的开 PR/合并/推功能分支按 issue-pr-loop 默认授权执行。 |
 | 2.0.0 | 2026-10-24 | 隐私拦截按「托管与可见性」双条件分级。§1 增第 6 项「托管与可见性判定」，排在隐私扫描之前；新增 [`references/host-visibility.md`](host-visibility.md)：两步判定顺序、公共托管清单、五条私人托管证据（含公网 IP 字面量）、匿名可读探测、`siungo-remote.private` 声明键、remote URL 脱敏、零 API 依赖；🔴 拆为**凭据类**（任何托管都硬阻断）与**隐私类**（私人托管＋私有仓库时降为提示），`privacy-scan.md` §1 分类表加「私人托管＋私有仓库时」列、§2 增前置判定步骤、§4 明确钩子恒按严格口径且不得 `--no-verify` 绕过；§3.3 改为「托管判定＋分级表」并给出证据来源行；§5.2 push 前重判；§6.7 改为按托管分级；§7 增第 6 项完成报告项。 |

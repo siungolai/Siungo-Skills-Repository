@@ -114,4 +114,4 @@ Ssd1306I2c(uint8_t scl, uint8_t sda, uint8_t addr = 0x3C, uint32_t hz = 400000);
 
 ## 八、掉线保护（跨项目通用）
 
-从机不在线时 `flush()` 每页 `endTransmission()` 阻塞到 50ms 超时，一轮刷新 ≈ 800ms，足以把 1 秒节拍带偏。因此 `flush()` 探测失败后**直接返回，不发任何事务**——计时精度与屏幕在线状态完全解耦。实测屏缺席仍 45 tick / 45 秒 = 1.0000 tick 每秒，无漂移。
+掉线保护：`flush()` 探测失败后直接返回（原理与实测 45 tick/45 秒数据见 `SKILL.md` §2.4.1 与 `diagnostic-tools.md` §四）。
