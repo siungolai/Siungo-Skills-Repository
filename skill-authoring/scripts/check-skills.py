@@ -316,7 +316,8 @@ def check_readme(repo, skill_names):
         if not f.exists():
             continue
         vals, _, _, _ = parse_frontmatter(read(f) or "")
-        if vals.get("version", "").strip() != rver:
+        fver = vals.get("version", "").strip().strip('"').strip("'")
+        if fver != rver:
             bad_ver.append(f"{sname}: README {rver} ≠ frontmatter {vals.get('version', '?')}")
     if bad_ver:
         record("README", False, "D4", "版本不一致：" + "；".join(bad_ver))

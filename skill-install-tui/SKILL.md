@@ -2,8 +2,8 @@
 name: skill-install-tui
 description: 把上游或第三方 SKILL 装进本机 dsh-tui 会话并验证它真的生效：装 npm 包式技能、给纯目录技能打本地 bundle、改 skill_search 查不到的问题时使用。
 agent_created: true
-version: 1.0.1
-last_updated: 2026-10-24
+version: 1.0.2
+last_updated: 2026-11-19
 author: siungolai
 ---
 
@@ -143,7 +143,7 @@ dsh plugin --profile dsh-tui add <包名>
 ## 7. 安全边界（硬性，任何路径下均适用）
 
 1. **上游技能内容零改**——本技能只负责搬运与验证。要改上游资产先说明理由并单独确认，否则下次 `dsh plugin add` 升级就被覆盖。
-2. **不擅自 commit / push**——仓库是公开仓库，推送即永久公开；提交与推送都要用户明确许可（`skill-authoring` 的 M9、M10）。
+2. **不擅自 commit / push**——仓库是公开仓库，推送即永久公开；直接调用本技能时的提交与推送要用户明确许可。PR 通道内的开 PR、合并、推送功能分支由 issue-pr-loop 默认代执行（v2.2.0 授权前提），不受本条约束；禁直推主干、禁绕过 PR、禁 force push 主干的护栏不变。
 3. **凭据与私有信息零入库**——写 bundle 的 README 与 `references/` 时不得带入 token、PAT、内网地址、带用户名的 host 别名；引用本机路径只写到目录层级，不写凭据文件名。
 4. **重启前先确认影响面**——TUI 进程可能正跑着别的会话，重启前说明会中断什么，不要静默 kill。
 5. **不把 `link:` 依赖指向临时目录**——`/tmp` 会被清理，bundle 必须落在持久路径（`/root/deepseekharness/Github/local-skill-bundles/`）。

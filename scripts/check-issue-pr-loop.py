@@ -2,10 +2,10 @@
 """项目级语义一致性门禁与主干提交对账（纯标准库、只读、无网络、不写文件）。
 
 默认模式：逐项校验 scripts/gates.json 结构、八个落点文件、各文档的 REQUIRED
-口径短语、全库 BANNED 旧错句、动作授权前提（新前提在、旧前提不在）、
+口径短语、限定文件集内的 BANNED 旧错句、动作授权前提（新前提在、旧前提不在）、
 pr-contract.md §8 代码块、版本三方一致与 C13 回退句；失败逐条打印
 FAIL <说明> 并 exit 1，全过打印通过行并 exit 0。
---reconcile：以 gates.json 的 reconcile.baseline 为起点对账 origin/main，
+--reconcile：以 gates.json 的 reconcile.baseline 为起点，对账顶层 baseline 指向的主干，
 筛出标题不以 (#<数字>) 结尾的孤儿提交；基线不存在或 git 失败即报错退出。
 """
 
@@ -36,8 +36,6 @@ LANDING_FILES = (
 # 普通子串包含判断（needle in text）：不做正则、不 strip 反引号。
 REQUIRED = {
     "issue-pr-loop/SKILL.md": (
-        "version: 2.2.0",
-        "last_updated: 2026-11-15",
         "feat / fix / refactor / docs / test / chore",
         "同文件永不同层",
         "四个时点",
@@ -50,7 +48,6 @@ REQUIRED = {
         "合并前后逐项过这张检查表",
         "基线之后",
         "跨技能读盘回退：优先",
-        "**动作授权前提（v2.2.0）**",
         "默认代用户执行",
         "禁止绕过 PR",
     ),
@@ -87,19 +84,16 @@ REQUIRED = {
         "publish-check",
     ),
     "issue-pr-loop/references/version.md": (
-        "2.2.0",
-        "2026-11-15",
         "更正",
     ),
     "README.md": (
-        "2.2.0",
         "1.1.3",
         "纯文档与纯重构",
         "scripts/gates.json",
         "CONTRIBUTING.md",
     ),
     "CONTRIBUTING.md": (
-        "d8fc6978460c8537540c87f6aaad9eb40633a435",
+        "存量对账基线",
     ),
     "PR_GUIDE.md": (
         "feat / fix / refactor / docs / test / chore",
@@ -177,14 +171,55 @@ def check_gates_structure(checker, data):
     checker.check(isinstance(data, dict), f"{GATES_JSON} 顶层必须是对象")
     if not isinstance(data, dict):
         return
+    top_baseline = data.get("baseline")
+    checker.check(
+        isinstance(top_baseline, str) and bool(top_baseline.strip()),
+        f"{GATES_JSON} 顶层 baseline 必须是非空引用名（如 origin/main）",
+    )
     gates = data.get("gates")
     checker.check(isinstance(gates, list), f"{GATES_JSON} 缺 gates 数组")
     if isinstance(gates, list):
         for index, gate in enumerate(gates, 1):
-            checker.check(
+            valid = (
                 isinstance(gate, dict)
-                and all(key in gate for key in ("name", "cmd", "required")),
-                f"{GATES_JSON} gates 第 {index} 条缺 name / cmd / required",
+                and all(key in gate for key in ("name", "cmd", "required"))
+            )
+            checker.check(valid, f"{GATES_JSON} gates 第 {index} 条缺 name / cmd / required")
+            if not valid:
+                continue
+            # required 必须是 bool（字符串 "false" 会被真值判断误纳），cmd 必须是字符串
+            checker.check(
+                isinstance(gate["required"], bool),
+                f"{GATES_JSON} gates 第 {index} 条 required 必须是布尔值",
+            )
+            checker.check(
+                isinstance(gate["cmd"], str) and bool(gate["cmd"].strip()),
+                f"{GATES_JSON} gates 第 {index} 条 cmd 必须是非空字符串",
+            )
+    # 分支保护名单单一事实源：gates.json(pr.protect) 必须与钩子、SKILL.md、CONTRIBUTING.md 一致
+    protect = data.get("pr", {}).get("protect") if isinstance(data.get("pr"), dict) else None
+    checker.check(
+        isinstance(protect, list) and bool(protect) and all(isinstance(b, str) for b in protect),
+        f"{GATES_JSON} pr.protect 必须是非空字符串数组",
+    )
+    if isinstance(protect, list):
+        def safe_text(rel):
+            try:
+                return (ROOT / rel).read_text(encoding="utf-8")
+            except (OSError, UnicodeError):
+                return None
+
+        hook_text = safe_text(HOOK)
+        for branch in protect:
+            checker.check(
+                hook_text is not None and f"refs/heads/{branch}" in hook_text,
+                f"钩子 {HOOK} 缺 pr.protect 中的分支 {branch}",
+            )
+        for rel in ("issue-pr-loop/SKILL.md", "CONTRIBUTING.md"):
+            text = safe_text(rel)
+            checker.check(
+                text is not None and all(branch in text for branch in protect),
+                f"{rel} 未列全 pr.protect 的分支 {protect}",
             )
     reconcile = data.get("reconcile")
     baseline = reconcile.get("baseline") if isinstance(reconcile, dict) else None
@@ -339,26 +374,35 @@ def check_versions(checker):
     if skill is None or version_md is None or readme is None:
         return
     fields = frontmatter(skill)
-    checker.check(fields.get("version") == "2.2.0", "SKILL.md frontmatter version 应为 2.2.0")
+    # 单一事实源：SKILL.md frontmatter 的 version/last_updated，其余两面须与它一致
+    skill_version = fields.get("version")
+    skill_date = fields.get("last_updated")
     checker.check(
-        fields.get("last_updated") == "2026-11-15",
-        "SKILL.md frontmatter last_updated 应为 2026-11-15",
+        isinstance(skill_version, str) and re.fullmatch(r"\d+\.\d+\.\d+", skill_version) is not None,
+        f"SKILL.md frontmatter version 必须是三段式版本（实际 {skill_version!r}）",
+    )
+    checker.check(
+        isinstance(skill_date, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", skill_date) is not None,
+        f"SKILL.md frontmatter last_updated 必须是 YYYY-MM-DD（实际 {skill_date!r}）",
     )
     row = first_version_row(version_md)
     checker.check(row is not None, "references/version.md 找不到表首数据行")
-    if row:
-        checker.check(row[0] == "2.2.0", "references/version.md 表首数据行版本应为 2.2.0")
+    if row and skill_version:
         checker.check(
-            len(row) > 1 and row[1] == "2026-11-15",
-            "references/version.md 表首数据行日期应为 2026-11-15",
+            row[0] == skill_version,
+            f"references/version.md 表首版本 {row[0]} ≠ SKILL.md version {skill_version}",
+        )
+        checker.check(
+            len(row) > 1 and row[1] == skill_date,
+            f"references/version.md 表首日期 {row[1] if len(row) > 1 else None} ≠ SKILL.md last_updated {skill_date}",
         )
     readme_version = readme_skill_version(readme)
     checker.check(
-        readme_version == "2.2.0",
-        f"README.md 技能表 issue-pr-loop 行版本应为 2.2.0（实际 {readme_version}）",
+        readme_version == skill_version,
+        f"README.md 技能表 issue-pr-loop 行版本 {readme_version} ≠ SKILL.md version {skill_version}",
     )
     checker.check(
-        fields.get("version") == (row[0] if row else None) == readme_version == "2.2.0",
+        skill_version == (row[0] if row else None) == readme_version,
         "SKILL.md / references/version.md / README.md 三方版本不一致",
     )
 
@@ -372,7 +416,7 @@ def check_c13(checker):
 
 
 def check_authorization_premise(checker):
-    """v2.2.0 前提反转：新前提逐文件落盘，旧前提由 BANNED 清零，护栏仍在。"""
+    """动作授权前提：新前提逐文件落盘，旧前提由 BANNED 清零，护栏仍在；版本号不硬编码。"""
     landing = (
         "issue-pr-loop/SKILL.md",
         "README.md",
@@ -383,11 +427,15 @@ def check_authorization_premise(checker):
         text = read_text(rel, checker)
         if text is None:
             continue
-        checker.check("代用户执行" in text, f"{rel} 缺 v2.2.0 动作授权前提短语「代用户执行」")
+        checker.check("代用户执行" in text, f"{rel} 缺动作授权前提短语「代用户执行」")
     skill = read_text("issue-pr-loop/SKILL.md", checker)
     if skill is None:
         return
-    checker.check("**动作授权前提（v2.2.0）**" in skill, "SKILL.md 缺动作授权前提段")
+    skill_version = frontmatter(skill).get("version", "")
+    checker.check(
+        f"**动作授权前提（v{skill_version}）**" in skill,
+        f"SKILL.md 动作授权前提段版本号应与 frontmatter 一致（v{skill_version}）",
+    )
     checker.check(
         "1. **可替用户开 PR、合并、推送功能分支**" in skill,
         "SKILL.md §14 第 1 条未反转动作授权前提",
@@ -417,10 +465,12 @@ def run_consistency():
 
 def run_reconcile():
     try:
-        data = json.loads((ROOT / GATES_JSON).read_text(encoding="utf-8"))
-        baseline = data["reconcile"]["baseline"]
+        config = json.loads((ROOT / GATES_JSON).read_text(encoding="utf-8"))
+        baseline = config["reconcile"]["baseline"]
+        # 主干引用从顶层 baseline 配置派生（换 main/master/slim 只改一处）
+        main_ref = config.get("baseline", "origin/main")
     except (OSError, UnicodeError, json.JSONDecodeError, KeyError, TypeError) as exc:
-        print(f"错误：无法读取 {GATES_JSON} 的 reconcile.baseline：{exc}", file=sys.stderr)
+        print(f"错误：无法读取 {GATES_JSON} 的 baseline 配置：{exc}", file=sys.stderr)
         return 1
     if not isinstance(baseline, str) or re.fullmatch(r"[0-9a-fA-F]{40}", baseline) is None:
         print(f"错误：reconcile.baseline 不是 40 位十六进制 sha：{baseline!r}", file=sys.stderr)
@@ -436,7 +486,7 @@ def run_reconcile():
         if probe.returncode != 0:
             print(f"错误：基线不存在：{baseline}", file=sys.stderr)
             return 1
-        log = git(["log", "--first-parent", "--format=%h %s", f"{baseline}..origin/main"])
+        log = git(["log", "--first-parent", "--format=%h %s", f"{baseline}..{main_ref}"])
     except OSError as exc:
         print(f"错误：无法执行 git：{exc}", file=sys.stderr)
         return 1
@@ -464,7 +514,7 @@ def main():
     parser.add_argument(
         "--reconcile",
         action="store_true",
-        help="以 scripts/gates.json 的 reconcile.baseline 为起点对账 origin/main",
+        help="以 scripts/gates.json 的 reconcile.baseline 为起点，对账顶层 baseline 指向的主干",
     )
     args = parser.parse_args()
     if args.reconcile:

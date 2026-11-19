@@ -36,8 +36,14 @@ import re
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from html.parser import HTMLParser
+
+
+def escape_md(text):
+    """转义会改变 Markdown 结构的特殊字符（正文文本用；代码/表格另行处理）。"""
+    return re.sub(r"([\\`*_{}\[\]()#+\-.!|>~])", r"\\\1", text)
 
 USER_AGENT = "Mozilla/5.0 (compatible; reference-archive/1.0)"
 
@@ -66,15 +72,21 @@ CLOSES_P = {
 
 
 def fetch(url, retries=3, timeout=40):
-    """抓一个 URL，返回 bytes；失败重试，最后一次失败则抛出。"""
+    """抓一个 URL，返回 bytes；仅瞬时错误重试，两次之间退避，最后一次失败直接抛出。"""
     last = None
     for attempt in range(retries):
         try:
             request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 return response.read()
-        except Exception as exc:  # noqa: BLE001 - 网络异常种类多，统一退避重试
+        except urllib.error.HTTPError as exc:
+            # 4xx（如 404）是确定性错误，重试只会浪费时间。
+            if exc.code < 500:
+                raise
             last = exc
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            last = exc
+        if attempt < retries - 1:
             time.sleep(2 + attempt * 3)
     raise last
 
@@ -110,8 +122,10 @@ class DocParser(HTMLParser):
         # 段落 / 列表状态
         self.open_p = False
         self.li_depth = 0
-        # 提示块
-        self.admon = None
+        # 提示块（栈式，支持嵌套；旧单槽实现里内层 note 会覆盖外层 warning）
+        self.admon_stack = []
+        self.admon = None  # 当前栈顶，兼容其余读取处
+        self.admon_buffer_stack = []
         self.admon_buffer = None
 
     # ---------- 输出 ----------
@@ -201,13 +215,14 @@ class DocParser(HTMLParser):
     # ---------- 提示块 ----------
 
     def flush_admonition(self):
-        """把提示块渲染成引用块并写回主输出。"""
+        """把当前提示块渲染成引用块并写回外层输出（栈式，内层 admonition 先 flush 并入外层正文）。"""
+        admon = self.admon_stack.pop()
         body = "".join(self.out)
-        self.out = self.admon_buffer
+        self.out = self.admon_buffer_stack.pop() if self.admon_buffer_stack else []
         body = re.sub(r"[ \t]+\n", "\n", body)
         body = re.sub(r"\n{3,}", "\n\n", body).strip()
-        title = re.sub(r"\s+", " ", self.admon["title"]).strip()
-        label = self.admon["type"]
+        title = re.sub(r"\s+", " ", admon["title"]).strip()
+        label = admon["type"]
         if title == label:
             title = ""
         lines = []
@@ -219,8 +234,8 @@ class DocParser(HTMLParser):
         for line in body.split("\n"):
             lines.append(">" if not line.strip() else "> " + line)
         self.out.append("\n\n" + "\n".join(lines) + "\n\n")
-        self.admon = None
-        self.admon_buffer = None
+        self.admon = self.admon_stack[-1] if self.admon_stack else None
+        self.admon_buffer = self.out
 
     # ---------- 标签 ----------
 
@@ -242,12 +257,15 @@ class DocParser(HTMLParser):
                 if "theme-admonition-{}".format(key) in classes:
                     kind = key
                     break
-            self.admon = {
+            admon = {
                 "type": ADMONITION_LABELS.get(kind, "提示"),
                 "title": "",
                 "depth": 1,
                 "heading_depth": None,
             }
+            self.admon_stack.append(admon)
+            self.admon = admon
+            self.admon_buffer_stack.append(self.out)
             self.admon_buffer = self.out
             self.out = []
             return
@@ -392,6 +410,9 @@ class DocParser(HTMLParser):
             return
 
         if tag == "pre":
+            # 关闭围栏前必须换行：<code>line1\nline2</code> 时末行不带换行，
+            # 直接追加 ``` 会把围栏贴到代码后面（旧 bug）。
+            self.ensure_newline()
             self.out.append("```\n")
             self.in_pre = max(0, self.in_pre - 1)
             self.in_code = max(0, self.in_code - 1)
@@ -422,12 +443,16 @@ class DocParser(HTMLParser):
             if href.startswith("#"):
                 if visible:
                     self.w(visible)
-            elif href.startswith("http"):
-                self.w("[{}]({})".format(text, href))
-            elif href.startswith("/"):
-                self.w("[{}]({}{})".format(text, self.base_url, href))
-            elif visible:
-                self.w(text)
+            else:
+                # 只忽略 data:/javascript:/mailto: 等非页面链接；
+                # 相对路径（./other/page）交给 urljoin，根目录 /abs 拼 base_url。
+                absolute = urllib.parse.urljoin(self.base_url + "/", href)
+                scheme = urllib.parse.urlparse(absolute).scheme
+                if scheme not in ("http", "https"):
+                    if visible:
+                        self.w(text)
+                else:
+                    self.w("[{}]({})".format(text, absolute))
             return
         if tag in ("ul", "ol"):
             if self.list_stack:
@@ -456,7 +481,7 @@ class DocParser(HTMLParser):
             return
         text = re.sub(r"\s+", " ", data)
         text = text.replace(ZERO_WIDTH, "")
-        self.w(text)
+        self.w(escape_md(text))
 
     def result(self):
         text = "".join(self.out)
@@ -586,6 +611,8 @@ def main():
     for page in config["pages"]:
         slug = page["slug"]
         filename = page["filename"]
+        if os.path.basename(filename) != filename or filename in (".", ".."):
+            sys.exit("错误: 配置里的 filename 不能含路径分隔符或 ..：{!r}".format(filename))
         url = "{}/{}/".format(base_url, slug)
         print("FETCH", url, flush=True)
         html = fetch(url).decode("utf-8", "replace")
