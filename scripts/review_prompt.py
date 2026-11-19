@@ -131,7 +131,7 @@ def main():
     base_sha = merge_base[0].strip()
 
     diff_out = run_git(
-        repo, ["diff", "--name-only", f"{base_sha}...{branch}"], "列改动文件"
+        repo, ["-c", "core.quotepath=false", "diff", "--name-only", f"{base_sha}...{branch}"], "列改动文件"
     )
     changed = [
         line.strip() for line in diff_out.replace("\r\n", "\n").splitlines() if line.strip()
