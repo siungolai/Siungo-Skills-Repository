@@ -33,11 +33,18 @@ NON_LOCAL_SCHEMES = {"mailto", "data", "ftp", "ftps", "javascript", "tel", "ssh"
 HTTP_SCHEMES = {"http", "https"}
 
 
-# reference-style 定义：[1]: path "可选标题" —— 兼容脚注式与图片式引用
+# reference-style 定义：[1]: path "可选标题"
+# 目标支持两种形态：<...>（内部允许空格，保留尖括号交给 clean_target 解析）
+# 与普通裸路径（无空格、无尖括号）；后接可选 "标题"。
 REF_DEF_PATTERN = re.compile(
-    r"^\s{0,3}\[([^\]]+)\]:\s*<?([^\s>]+)>?(?:\s+\"[^\"]*\")?\s*$", re.M
+    r"^\s{0,3}\[(?P<label>[^\]]+)\]:\s*"
+    r"(?:<(?P<angled>[^>]*)>|(?P<bare>[^\s<>]+))"
+    r'(?:\s+"[^"]*")?\s*$',
+    re.M,
 )
 REF_USE_PATTERN = re.compile(r"(!?)\[([^\]]*)\]\[([^\]]*)\]")
+# 快捷引用 [label]：仅当定义存在时才计入；排除内联 [text](url) 与完整/折叠引用的后半段
+SHORTCUT_USE_PATTERN = re.compile(r"(!?)(?<!\])\[([^\]]+)\](?![\(\[])")
 
 
 def collect_markdown(root, recursive=False):
@@ -89,16 +96,32 @@ def scan(root, asset_dirs, recursive=False):
             text = FENCE_PATTERN.sub("", handle.read())
         text = INLINE_CODE_PATTERN.sub("", text)
 
-        # 先收集本文件的 reference-style 定义（全文范围）
-        definitions = {label.lower(): target for label, target in REF_DEF_PATTERN.findall(text)}
+        # 先收集本文件的 reference-style 定义（全文范围）；<...> 形态保留尖括号，
+        # 由 clean_target 统一剥离，这样带空格的目标也能正确解析。
+        definitions = {}
+        for match in REF_DEF_PATTERN.finditer(text):
+            target = match.group("angled")
+            if target is None:
+                target = match.group("bare")
+            definitions[match.group("label").lower()] = "<{}>".format(target)
+
+        # 定义行里的 [label]: 不是引用，扫描使用前先剔除，避免被快捷引用误计。
+        text = REF_DEF_PATTERN.sub("", text)
 
         candidates = []
         for match in INLINE_PATTERN.finditer(text):
             candidates.append(("IMG" if match.group(1) else "LNK", match.group(3)))
 
+        # 完整引用 [text][label] 与折叠引用 [][label]
         for match in REF_USE_PATTERN.finditer(text):
             label = (match.group(3) or match.group(2)).strip().lower()
             if label in definitions:
+                candidates.append(("IMG" if match.group(1) else "LNK", definitions[label]))
+
+        # 快捷引用 [label]：只有定义了同名 label 才算链接，否则是普通方括号文字
+        for match in SHORTCUT_USE_PATTERN.finditer(text):
+            label = match.group(2).strip().lower()
+            if label in definitions and not REF_USE_PATTERN.match(match.string, match.start()):
                 candidates.append(("IMG" if match.group(1) else "LNK", definitions[label]))
 
         for kind, raw in candidates:
