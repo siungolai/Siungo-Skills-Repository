@@ -334,7 +334,11 @@ def check_readme(repo, skill_names):
         record("README", True, "D5", f"徽章 skills-{badge.group(1)} 与实际技能数一致")
 
     # 目录结构块
-    missing_tree = sorted(s for s in skill_names if s not in text.split("## 目录结构")[-1].split("```")[1] if len(text.split("## 目录结构")) > 1 and len(text.split("## 目录结构")[-1].split("```")) > 1)
+    # 目录结构块缺失时记为 D5 FAIL，不能让 split("```")[1] 抛 IndexError 把门禁打崩。
+    tree_sections = text.split("## 目录结构")
+    tree_blocks = tree_sections[-1].split("```") if len(tree_sections) > 1 else []
+    tree_body = tree_blocks[1] if len(tree_blocks) > 1 else ""
+    missing_tree = sorted(s for s in skill_names if s not in tree_body)
     if missing_tree:
         record("README", False, "D5", "目录结构块缺技能：" + "、".join(missing_tree))
     else:

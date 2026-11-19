@@ -87,7 +87,6 @@ REQUIRED = {
         "更正",
     ),
     "README.md": (
-        "1.1.3",
         "纯文档与纯重构",
         "scripts/gates.json",
         "CONTRIBUTING.md",
@@ -357,9 +356,9 @@ def first_version_row(text):
     return None
 
 
-def readme_skill_version(text):
+def readme_skill_version(text, skill="issue-pr-loop"):
     for line in text.replace("\r\n", "\n").splitlines():
-        if not line.startswith("|") or "issue-pr-loop" not in line:
+        if not line.startswith("|") or skill not in line:
             continue
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
         if len(cells) >= 2 and re.fullmatch(r"\d+\.\d+(?:\.\d+)?", cells[1]):
@@ -404,6 +403,24 @@ def check_versions(checker):
     checker.check(
         skill_version == (row[0] if row else None) == readme_version,
         "SKILL.md / references/version.md / README.md 三方版本不一致",
+    )
+
+
+def check_readme_authoring_version(checker):
+    """README 技能表里 skill-authoring 的版本须从其 SKILL.md frontmatter 派生，不写死。"""
+    skill = read_text("skill-authoring/SKILL.md", checker)
+    readme = read_text("README.md", checker)
+    if skill is None or readme is None:
+        return
+    skill_version = frontmatter(skill).get("version")
+    checker.check(
+        isinstance(skill_version, str) and re.fullmatch(r"\d+\.\d+\.\d+", skill_version) is not None,
+        f"skill-authoring/SKILL.md frontmatter version 必须是三段式（实际 {skill_version!r}）",
+    )
+    readme_version = readme_skill_version(readme, "skill-authoring")
+    checker.check(
+        readme_version == skill_version,
+        f"README.md 技能表 skill-authoring 行版本 {readme_version} ≠ SKILL.md version {skill_version}",
     )
 
 
@@ -453,6 +470,7 @@ def run_consistency():
     check_banned(checker)
     check_hook_block(checker)
     check_versions(checker)
+    check_readme_authoring_version(checker)
     check_c13(checker)
     check_authorization_premise(checker)
     if checker.fails:

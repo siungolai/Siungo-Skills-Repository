@@ -4,6 +4,8 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+
+| 1.1.4 | 2026-11-19 | `check-skills.py` 的 README 目录结构块校验在缺节时改为记 D5 FAIL，不再因 `split("```")[1]` 抛 IndexError 把门禁打崩。 |
 | 1.1.3 | 2026-11-15 | 说明 check-skills.py 能力边界，要求项目级语义门禁与人工核对跨文件口径 |
 | 1.1.2 | 2026-10-27 | `check-skills.py` 增加 git 排除识别：被 `.gitignore` / `.git/info/exclude` 排除的技能目录视为本地私有（不入库、不推送），跳过 M1–P7 与 README 一致性统计，运行时会打印一行跳过提示。起因是 `norman-design-everyday-things`（第三方版权作品的衍生笔记）按用户决定留作本地私有，若继续计入技能数与 README 技能表，会让公开仓库的徽章与表格指向不存在的目录。 |
 | 1.1.1 | 2026-10-24 | 上游 mattpocock 技能换用原名版本地 bundle：`@vinvcn/dsh-mattpocock-skills-zh`（构建期给每个 `name` 加 `zh-` 前缀，导致 `/grill-me` 等仓库原名无法调用）已从两个 profile 卸下，改为本地 bundle `mattpocock-skills-zh-local`（用上游同一套构建脚本以 `SKILL_PREFIX=''` 重跑生成，37 个技能名 = 上游原名）。`external-skills.md` 的台账行、位置列、「上游命名规则」节随之改为原名版事实；`~/.dsh/skills/` 下 37 个软链由 `zh-<name>` 改为 `<name>`。SKILL.md / standard.md / templates.md / agent-team-setup / reference-archive 里引用上游技能的写法由 `zh-<name>` 统一改回原名（`check-skills.py` 的 M7 按 `~/.dsh/skills/<name>/SKILL.md` 查找）。README 技能表简介同步。 |
