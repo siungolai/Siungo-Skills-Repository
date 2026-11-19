@@ -211,10 +211,25 @@ def check_gates_structure(checker, data):
                 return None
 
         hook_text = safe_text(HOOK)
+        # 只解析 case "$remote_ref" in ... esac 内的模式：注释里的 refs/heads/... 不算保护。
+        case_text = ""
+        if hook_text is not None:
+            case_match = re.search(
+                r'case\s+["\']?\$remote_ref["\']?\s+in\b(.*?)\besac\b',
+                hook_text,
+                re.DOTALL,
+            )
+            if case_match:
+                case_text = re.sub(r"#[^\n]*", "", case_match.group(1))
+        protected_refs = set(re.findall(r"refs/heads/[A-Za-z0-9._/-]+", case_text))
+        checker.check(
+            bool(protected_refs),
+            f"钩子 {HOOK} 未解析到 case 中的 refs/heads/... 受保护分支",
+        )
         for branch in protect:
             checker.check(
-                hook_text is not None and f"refs/heads/{branch}" in hook_text,
-                f"钩子 {HOOK} 缺 pr.protect 中的分支 {branch}",
+                f"refs/heads/{branch}" in protected_refs,
+                f"钩子 {HOOK} case 模式缺 pr.protect 中的分支 {branch}",
             )
         for rel in ("issue-pr-loop/SKILL.md", "CONTRIBUTING.md"):
             text = safe_text(rel)
