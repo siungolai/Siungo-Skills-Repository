@@ -7,7 +7,7 @@
 检查项（括号内为条文编号，定义见 skill-authoring/references/standard.md）：
     M1  目录名 = frontmatter name，且只用小写英文与连字符
     M2  骨架构件齐全（触发加载检查块 / 定位段 / 完成后报告章）
-    M3  frontmatter 六键齐全、顺序正确、无未列举键
+    M3  frontmatter 六键齐全、顺序正确、无未列举键；last_updated 非空且为 YYYY-MM-DD
     P1  frontmatter 不含 disable-model-invocation
     M5  references/version.md 存在；version 与其表首行一致；last_updated 同日期
     M6  章节编号全阿拉伯且连续；§ 引用可唯一解析；无 §N 式中文数字引用
@@ -122,7 +122,7 @@ def check_skill(repo, skill_dir):
     else:
         record(name, True, "M1", f"目录名 = name = {name}")
 
-    # M3 六键齐全、顺序正确、无未列举键
+    # M3 六键齐全、顺序正确、无未列举键；last_updated 非空且为 YYYY-MM-DD
     problems = []
     missing = [k for k in FRONTMATTER_KEYS if k not in values]
     if missing:
@@ -133,10 +133,14 @@ def check_skill(repo, skill_dir):
     listed = [k for k in order if k in FRONTMATTER_KEYS]
     if listed != [k for k in FRONTMATTER_KEYS if k in values]:
         problems.append(f"键顺序为 {listed}，应为 {FRONTMATTER_KEYS[:len(listed)]}")
+    # 与 check-issue-pr-loop.py:387 的日期格式判据对齐：空值或坏格式都计入 M3 FAIL
+    stamp = values.get("last_updated", "").strip().strip('"').strip("'")
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", stamp) is None:
+        problems.append(f"last_updated 必须是非空 YYYY-MM-DD（实际 {stamp!r}）")
     if problems:
         record(name, False, "M3", "；".join(problems))
     else:
-        record(name, True, "M3", "frontmatter 六键齐全、顺序正确")
+        record(name, True, "M3", "frontmatter 六键齐全、顺序正确，last_updated 格式正确")
 
     # P1 disable-model-invocation
     if "disable-model-invocation" in values:
@@ -156,7 +160,6 @@ def check_skill(repo, skill_dir):
 
     # M5 version.md
     ver = values.get("version", "").strip().strip('"').strip("'")
-    stamp = values.get("last_updated", "").strip().strip('"').strip("'")
     vfile = skill_dir / "references" / "version.md"
     if not vfile.exists():
         record(name, False, "M5", "缺少 references/version.md")
@@ -176,7 +179,9 @@ def check_skill(repo, skill_dir):
             bad = []
             if v_ver != ver:
                 bad.append(f"表首行版本 {v_ver} ≠ frontmatter {ver}")
-            if stamp and v_date != stamp:
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", stamp):
+                bad.append(f"last_updated 必须是 YYYY-MM-DD（实际 {stamp!r}）")
+            elif v_date != stamp:
                 bad.append(f"表首行日期 {v_date} ≠ last_updated {stamp}")
             if bad:
                 record(name, False, "M5", "；".join(bad))
