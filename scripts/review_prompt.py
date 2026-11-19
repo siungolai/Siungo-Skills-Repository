@@ -53,8 +53,8 @@ def ref_exists(repo, ref):
     return proc.returncode == 0
 
 
-def load_gate_commands(repo):
-    """从 scripts/gates.json 只取 required 为真的门禁命令。"""
+def load_gate_data(repo):
+    """从 scripts/gates.json 读出 (门禁命令清单, 基线引用名)，只取 required is True 的门禁。"""
     gates_path = repo / "scripts" / "gates.json"
     try:
         raw = gates_path.read_text(encoding="utf-8")
@@ -66,13 +66,16 @@ def load_gate_commands(repo):
         fail(f"门禁清单不是合法 JSON（{gates_path}）：{exc}")
     if not isinstance(data, dict) or not isinstance(data.get("gates"), list):
         fail(f"门禁清单缺 gates 数组（{gates_path}）")
+    baseline = data.get("baseline")
+    if not isinstance(baseline, str) or not baseline.strip():
+        fail(f"门禁清单缺有效顶层 baseline（{gates_path}）")
     commands = []
     for index, gate in enumerate(data["gates"], 1):
         if not isinstance(gate, dict) or not all(k in gate for k in ("name", "cmd", "required")):
             fail(f"门禁清单第 {index} 条缺 name / cmd / required 字段（{gates_path}）")
-        if gate["required"]:
+        if gate["required"] is True:
             commands.append(str(gate["cmd"]))
-    return commands
+    return commands, baseline
 
 
 def main():
@@ -108,13 +111,19 @@ def main():
         )
     branch = branches[0]
 
-    # 2) 基线：origin/main 优先，不存在则用 main。
-    if ref_exists(repo, "origin/main"):
-        baseline = "origin/main"
-    elif ref_exists(repo, "main"):
-        baseline = "main"
-    else:
-        fail(f"找不到基线引用 origin/main 或 main（仓库：{repo}）")
+    # 2) 基线：优先 gates.json 顶层 baseline，引用不存在再依次回退 main、master。
+    #    门禁命令与基线同源：均由 scripts/gates.json 派生，仓库换主干名时只改一处。
+    commands, configured_baseline = load_gate_data(repo)
+    baseline = None
+    for candidate in (configured_baseline, "origin/main", "origin/master", "main", "master"):
+        if candidate and ref_exists(repo, candidate):
+            baseline = candidate
+            break
+    if baseline is None:
+        fail(
+            f"找不到基线引用（gates.json baseline={configured_baseline!r}，"
+            f"已试 origin/main、origin/master、main、master；仓库：{repo}）"
+        )
 
     merge_base = run_git(repo, ["merge-base", baseline, branch], "求合并基线").strip().splitlines()
     if not merge_base:
@@ -129,7 +138,7 @@ def main():
     ]
 
     # 3) 门禁命令清单：清单缺失/损坏/缺字段时上面已失败退出。
-    commands = load_gate_commands(repo)
+    #    （commands 与 baseline 同源，已在步骤 2 一并从 gates.json 读出。）
 
     # 全部成功后一次性输出五项，失败路径不会走到这里。
     lines = [

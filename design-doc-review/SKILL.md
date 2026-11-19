@@ -2,8 +2,8 @@
 name: design-doc-review
 description: "设计文档评审与编写：审阅/审计/编写/重构/同步设计文档（策划案、API 设计、数据模型、系统架构、PRD）时使用；覆盖全篇审计、数值脚本核验、交叉引用完整性、提案先行与同步校验。Design doc review: audit, verify, author, restructure, and sync design documents — full-doc audit, numeric script verification, cross-reference integrity, proposal-first flow."
 agent_created: true
-version: 2.2.0
-last_updated: 2026-10-03
+version: 2.2.1
+last_updated: 2026-11-19
 author: siungolai
 license: MIT
 platforms: [linux, macos, windows]
@@ -36,7 +36,7 @@ metadata:
 
 1. **先通读全文。** 每个章节、每张表格，在任何分析或操作之前。
 2. **只审阅即只读。** 被要求审阅/分析时，不要改代码、跑构建、切分支、同步仓库。止步于分析 + 建议。
-3. **未经用户明确指示，绝不 `git commit` / `git push`。** 生成/编辑文件可以；提交需要明确授权。
+3. **未经用户明确指示，绝不 `git commit` / `git push`。** 生成/编辑文件可以；直接调用本技能时的提交需要明确授权。PR 通道内的开 PR、合并、推送功能分支由 issue-pr-loop 默认代执行（v2.2.0 授权前提），不受本条约束；禁直推主干、禁绕过 PR、禁 force push 主干的护栏不变。
 4. **权威文档优先。** 重构配套文档以对齐策划文档时，策划文档是最高权威。配套文档必须与策划需求 1:1 映射——零偏差。
 5. **核心重构提案先行。** 结构性改动（数据模型、层级、阈值）→ 先写编号提案文档（标记 📋 待审批），获用户批准后，再改正式文档。
 
@@ -184,7 +184,7 @@ metadata:
 ## 7. 安全边界（硬性，任何路径下均适用）
 
 1. **只审阅即只读**（§2.2）：被要求审阅/分析时，不改代码、不跑构建、不切分支、不同步仓库；止步于分析 + 建议。
-2. **提交需要明确授权**（§2.3）：未经用户明确指示绝不 `git commit` / `git push`；生成与编辑文件可以，提交不行。
+2. **提交需要明确授权**（§2.3）：未经用户明确指示绝不 `git commit` / `git push`；生成与编辑文件可以，提交不行。此条约束直接调用本技能的场景；PR 通道内的开 PR、合并、推功能分支按 issue-pr-loop 默认授权执行。
 3. **提案未获批不动正式文档**（§2.5）：结构性改动先写提案文档并等批准；批准前正式文档一个字都不改。
 4. **改文档也不得越权改实现**：发现实现与文档不一致时报告并给建议，不擅自改代码来"对齐文档"。
 

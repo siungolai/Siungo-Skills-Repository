@@ -21,10 +21,23 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 
-IMAGE_PATTERN = re.compile(r"!\[[^\]]*\]\(([^)\s]+)")
-LINK_PATTERN = re.compile(r"(?<!\!)\[[^\]]*\]\(([^)\s]+)")
+# 内联链接/图片：目标允许 () 内一层嵌套括号，以及 <...> 包裹的带空格路径
+INLINE_PATTERN = re.compile(r"(!?)\[([^\]]*)\]\(((?:[^()]|\([^()]*\))*)\)", re.S)
 FENCE_PATTERN = re.compile(r"```.*?```", re.S)
+INLINE_CODE_PATTERN = re.compile(r"`[^`\n]*`")
+
+# 这些 scheme 不是本地文件，既不外链也不查缺失（避免把 data:/ftp: 误判为断链）
+NON_LOCAL_SCHEMES = {"mailto", "data", "ftp", "ftps", "javascript", "tel", "ssh", "git"}
+HTTP_SCHEMES = {"http", "https"}
+
+
+# reference-style 定义：[1]: path "可选标题" —— 兼容脚注式与图片式引用
+REF_DEF_PATTERN = re.compile(
+    r"^\s{0,3}\[([^\]]+)\]:\s*<?([^\s>]+)>?(?:\s+\"[^\"]*\")?\s*$", re.M
+)
+REF_USE_PATTERN = re.compile(r"(!?)\[([^\]]*)\]\[([^\]]*)\]")
 
 
 def collect_markdown(root, recursive=False):
@@ -43,6 +56,28 @@ def collect_markdown(root, recursive=False):
     return sorted(files)
 
 
+def clean_target(raw):
+    """把链接目标规整成 (target, is_local)；解析 <...>、标题、查询串与 scheme。"""
+    target = raw.strip()
+    if target.startswith("<") and ">" in target:
+        target = target[1:target.index(">")]
+    else:
+        # 去掉可选的空格+标题：`path "title"`
+        target = target.split(" ", 1)[0]
+    if not target:
+        return None, False
+    parsed = urllib.parse.urlparse(target)
+    if parsed.scheme in HTTP_SCHEMES:
+        return target, False
+    if parsed.scheme in NON_LOCAL_SCHEMES:
+        return None, False
+    # 本地路径：去查询串与锚点，百分号解码（空格/中文路径常见）
+    local = urllib.parse.unquote(parsed.path)
+    if not local:
+        return None, False
+    return local, True
+
+
 def scan(root, asset_dirs, recursive=False):
     missing = []
     external = []
@@ -51,27 +86,32 @@ def scan(root, asset_dirs, recursive=False):
     for path in collect_markdown(root, recursive):
         relative = os.path.relpath(path, root)
         with open(path, encoding="utf-8") as handle:
-            text = handle.read()
-        text = FENCE_PATTERN.sub("", text)
-        for pattern, kind in ((IMAGE_PATTERN, "IMG"), (LINK_PATTERN, "LNK")):
-            for match in pattern.finditer(text):
-                target = match.group(1).strip()
-                if not target:
-                    continue
-                if target.startswith(("http://", "https://")):
-                    external.append({"file": relative, "kind": kind, "target": target})
-                    continue
-                if target.startswith("#"):
-                    continue
-                if target.startswith("mailto:"):
-                    continue
-                local = target.split("#")[0]
-                if not local:
-                    continue
-                resolved = os.path.normpath(os.path.join(os.path.dirname(path), local))
-                used.add(resolved)
-                if not os.path.exists(resolved):
-                    missing.append({"file": relative, "kind": kind, "target": target})
+            text = FENCE_PATTERN.sub("", handle.read())
+        text = INLINE_CODE_PATTERN.sub("", text)
+
+        # 先收集本文件的 reference-style 定义（全文范围）
+        definitions = {label.lower(): target for label, target in REF_DEF_PATTERN.findall(text)}
+
+        candidates = []
+        for match in INLINE_PATTERN.finditer(text):
+            candidates.append(("IMG" if match.group(1) else "LNK", match.group(3)))
+
+        for match in REF_USE_PATTERN.finditer(text):
+            label = (match.group(3) or match.group(2)).strip().lower()
+            if label in definitions:
+                candidates.append(("IMG" if match.group(1) else "LNK", definitions[label]))
+
+        for kind, raw in candidates:
+            target, is_local = clean_target(raw)
+            if target is None:
+                continue
+            if not is_local:
+                external.append({"file": relative, "kind": kind, "target": target})
+                continue
+            resolved = os.path.normpath(os.path.join(os.path.dirname(path), target))
+            used.add(resolved)
+            if not os.path.exists(resolved):
+                missing.append({"file": relative, "kind": kind, "target": raw.strip()})
 
     unused = []
     for asset_dir in asset_dirs:
