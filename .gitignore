@@ -1,2 +1,6 @@
 # 临时工作目录：调研脚本、tracer-bullet ticket、草稿等一次性产物
 .scratch/
+
+# Python 生成物：字节码缓存与编译产物
+__pycache__/
+*.py[cod]
