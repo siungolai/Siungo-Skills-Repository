@@ -521,7 +521,8 @@ def run_reconcile():
         if probe.returncode != 0:
             print(f"错误：基线不存在：{baseline}", file=sys.stderr)
             return 1
-        log = git(["log", "--first-parent", "--format=%h %s", f"{baseline}..{main_ref}"])
+        # 不加 --first-parent：基线之后经 --no-ff 并入主干的侧支提交同样参与对账
+        log = git(["log", "--format=%h %s", f"{baseline}..{main_ref}"])
     except OSError as exc:
         print(f"错误：无法执行 git：{exc}", file=sys.stderr)
         return 1
