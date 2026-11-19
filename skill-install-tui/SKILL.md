@@ -132,7 +132,7 @@ dsh plugin --profile dsh-tui add <包名>
 
 ### 6.4 `skills.dirs` 与 dsh 能否加载无关
 
-**判据**：pnpm 的 `skills.dirs` 指向 profile 相对目录（`/root/.dsh/profiles/<p>/.dsh/skills/`），它只服务 pnpm 的 approve 前置校验；dsh 的 filesystem roots 是另一套（完整 rank 表见 `references/pitfalls.md` 「一、两套扫描机制」小节的 1.1）），且 dsh 取技能名用 **frontmatter 的 `name`，不用目录名**。两者互不影响，别用一个的结论推另一个。
+**判据**：pnpm 的 `skills.dirs` 指向 profile 相对目录（`/root/.dsh/profiles/<p>/.dsh/skills/`），它只服务 pnpm 的 approve 前置校验；dsh 的 filesystem roots 是另一套（完整 rank 表见 `references/pitfalls.md` 「一、两套扫描机制」小节的 1.1），且 dsh 取技能名用 **frontmatter 的 `name`，不用目录名**。两者互不影响，别用一个的结论推另一个。
 
 ### 6.5 上游构建脚本给技能名加前缀（`/原名` 无法调用的真凶）
 
