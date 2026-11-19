@@ -194,16 +194,14 @@ def main():
         tree = gh("POST", f"repos/{repo}/git/trees", {"tree": ls_tree_blobs(commit)})
         if tree["sha"] != meta["tree"]:
             sys.exit(f"✗ tree 不一致: 远端 {tree['sha']} != 本地 {meta['tree']}，中止")
-        # 父链：merge commit 的原 parent 先映射到远端 sha，最后一个接前一条重建结果。
+        # 父链逐字照抄本地提交：重建是字节级一致的（tree/author/committer/message 全同），
+        # 每个父 SHA 在远端与本地天然相同——无需也不能按 prev_remote 改写。
+        # 旧实现把 parents[-1] 当第一父校验/替换，普通 merge 下 prev_remote 恰是次父，
+        # 必然误报「第一父不一致」且会替换错父，故直接原样传递。
         original_parents = meta["parents"]
         if len(original_parents) > 1:
-            print(f"  merge commit：{len(original_parents)} 个 parent 按原顺序重建")
-        if len(original_parents) > 1 and original_parents[-1] != prev_remote:
-            sys.exit(
-                f"✗ merge commit {short} 的第一父 {original_parents[-1][:12]} "
-                f"与链上前一条 {prev_remote[:12]} 不一致；请用 --topo-order 核对提交链"
-            )
-        parents = original_parents[:-1] + [prev_remote]
+            print(f"  merge commit：{len(original_parents)} 个 parent 按原顺序逐字重建")
+        parents = original_parents
         created = gh(
             "POST",
             f"repos/{repo}/git/commits",
