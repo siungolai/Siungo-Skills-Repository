@@ -92,7 +92,7 @@ Siungo-Skills-Repository/
 │   ├── references/
 │   │   ├── pr-contract.md            # PR 契约：标题规范、正文五段模板、生命周期、squash 回滚、通道堵点、分支保护、拦推钩子、对账
 │   │   ├── flow.md                   # 流程细则：四要素表、拆分信号、plan 模板、分层规则、派发物料、回签模板、记忆外置
-│   │   ├── ledger-and-gates.md       # 标签台账（含 needs-merge）、门禁清单唯一事实源、派发与拦推脚本、收口四个数字
+│   │   ├── ledger-and-gates.md       # 标签台账（含 needs-merge）、收口四个数字、对账说明（门禁唯一事实源：scripts/gates.json）
 │   │   ├── case-book.md              # 实测基线（5 天 502 次提交 / 153 个 PR 合 151 个 / 合并中位 15.1 分钟）与四个反例
 │   │   └── version.md                # 修订记录（版本历史，按时间倒序）
 │   └── docs/adr/                     # 决策记录 0001（评审权外包给新上下文）、0002（所有改动必须经 PR）
