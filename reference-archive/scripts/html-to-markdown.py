@@ -63,6 +63,14 @@ ADMONITION_LABELS = {
 
 ZERO_WIDTH = "\u200b\u200c\u200d\ufeff"
 
+# 逐个零宽字符剥离：旧实现用整串 replace，只删得掉四个连续字符。
+ZERO_WIDTH_CHARS = frozenset(ZERO_WIDTH)
+
+
+def strip_zero_width(text):
+    """剥离任意位置的零宽/不可见字符，而不要求它们连续出现。"""
+    return "".join(ch for ch in text if ch not in ZERO_WIDTH_CHARS)
+
 # 这些标签出现时，之前未闭合的 <p> 会被浏览器隐式闭合
 CLOSES_P = {
     "div", "ul", "ol", "li", "table", "thead", "tbody", "tfoot", "tr",
@@ -292,6 +300,11 @@ class DocParser(HTMLParser):
             return
         if tag == "p":
             self.close_p()
+            if self.li_depth > 0:
+                # 上一个 <li> 未闭合就来了 <p>：HTML5 会隐式结束列表项，
+                # 渲染也必须断开，否则段落被并进 "- 项目" 那一行。
+                self.ensure_newline()
+                self.block_break()
             self.open_p = True
             return
         if tag == "li":
@@ -439,7 +452,7 @@ class DocParser(HTMLParser):
             href = self.href
             self.in_anchor = False
             self.anchor_text = []
-            visible = text.replace(ZERO_WIDTH, "").strip()
+            visible = strip_zero_width(text).strip()
             if href.startswith("#"):
                 if visible:
                     self.w(visible)
@@ -480,7 +493,7 @@ class DocParser(HTMLParser):
                 self.w(" ")
             return
         text = re.sub(r"\s+", " ", data)
-        text = text.replace(ZERO_WIDTH, "")
+        text = strip_zero_width(text)
         self.w(escape_md(text))
 
     def result(self):
@@ -491,33 +504,55 @@ class DocParser(HTMLParser):
 
 
 def extract_article(html, marker):
-    """截出文章正文。marker 命中就取该 div 的配对结束位置，否则回退到 <article>。"""
+    """截出文章正文。marker 命中就从它所在的开标签配对，否则回退到 <article>。
+
+    旧实现无论从哪种标签开始都只数 <div>，回退 <article> 时会在首个 </div>
+    处截断（甚至切在 '<' 上），把正文腰斩。这里按实际起始标签名分派配对，
+    并跳到每个标签的 '>' 之后再继续扫描。
+    """
     start = html.find(marker) if marker else -1
     if start < 0:
         start = html.find("<article")
     if start < 0:
         raise RuntimeError("article body not found — 检查配置里的 article_marker")
-    index = html.find(">", start)
+
+    # marker 可能落在标签内部，回退到最近的 '<' 以拿到完整开标签
+    tag_start = html.rfind("<", 0, start + 1)
+    if tag_start < 0:
+        tag_start = start
+    opening = re.match(r"<([A-Za-z][A-Za-z0-9]*)", html[tag_start:])
+    tag = opening.group(1).lower() if opening else "div"
+    start = tag_start
+
+    gt = html.find(">", start)
+    if gt < 0:
+        raise RuntimeError("article marker 开标签未闭合")
+
+    pattern = re.compile(r"<(/?){}\b".format(re.escape(tag)), re.I)
     depth = 1
-    cursor = index + 1
+    cursor = gt + 1
     while cursor < len(html) and depth > 0:
-        match = re.search(r"<(/?)div\b", html[cursor:])
+        match = pattern.search(html, cursor)
         if not match:
             break
-        position = cursor + match.start()
         depth += -1 if match.group(1) else 1
-        cursor = position + 1
+        end = html.find(">", match.end())
+        cursor = end + 1 if end >= 0 else match.end()
     return html[start:cursor]
 
 
 def safe_name(relative):
-    """把站点路径尾段变成安全的文件名。"""
-    tail = relative.split("/")[-1].split("?")[0]
+    """把站点路径尾段变成安全的文件名，查询串编码进文件名以免不同版本互相覆盖。"""
+    parsed = urllib.parse.urlsplit(relative)
+    tail = parsed.path.split("/")[-1]
     stem, dot, ext = tail.rpartition(".")
     if not dot:
         stem, ext = tail, ""
-    stem = re.sub(r"[^A-Za-z0-9._-]", "_", stem)
-    ext = re.sub(r"[^A-Za-z0-9]", "", ext)
+    stem = re.sub(r"[^A-Za-z0-9._-]", "_", stem) or "image"
+    ext = re.sub(r"[^A-Za-z0-9]", "", ext).lower()
+    if parsed.query:
+        query = re.sub(r"[^A-Za-z0-9]", "_", parsed.query)[:40]
+        stem = "{}_{}".format(stem, query)
     return stem + ("." + ext if ext else ".bin")
 
 
@@ -531,23 +566,48 @@ def find_images(body):
         value = match.group(1) or match.group(2) or match.group(3) or ""
         if not value or value.startswith("data:"):
             continue
-        path = value.split("?")[0]
+        # 扩展名看 path，去重键保留查询串：?v=2 与 ?v=9 是两张不同的图。
+        path = urllib.parse.urlsplit(value).path
         if not path.lower().endswith(tuple("." + e for e in IMAGE_EXTS)):
             continue
-        if path not in found:
-            found.append(path)
+        if value not in found:
+            found.append(value)
     return sorted(found)
+
+
+def rewrite_markdown_target(markdown, old, new):
+    """只改写 Markdown 图片/链接语法里的目标，不碰正文中恰好含该子串的 URL。"""
+    pattern = re.compile(
+        r"(!?\[[^\]]*\]\()(" + re.escape(old) + r")(\s+(?:\"[^\"]*\"|'[^']*'))?(\))"
+    )
+    return pattern.sub(
+        lambda m: "{}{}{}{}".format(m.group(1), new, m.group(3) or "", m.group(4)),
+        markdown,
+    )
 
 
 def localize_images(markdown, body, base_url, asset_dir, asset_root, delay):
     """下载正文里的图片，返回改写后的 Markdown 与图片清单。"""
     candidates = find_images(body)
     manifest = []
+    used_names = {}
     for relative in candidates:
         name = safe_name(relative)
+        if name in used_names:
+            # 不同来源的文件名撞车：加来源短哈希，避免后者覆盖前者的错图。
+            suffix = hashlib.md5(relative.encode("utf-8")).hexdigest()[:8]
+            stem, dot, ext = name.rpartition(".")
+            name = "{}_{}{}".format(stem, suffix, "." + ext if dot else "")
+            counter = 1
+            while name in used_names:
+                stem, dot, ext = name.rpartition(".")
+                name = "{}_{}{}".format(stem, suffix + str(counter), "." + ext if dot else "")
+                counter += 1
+        used_names[name] = relative
+
         destination = os.path.join(asset_dir, name)
         if not os.path.exists(destination):
-            url = relative if relative.startswith("http") else base_url + relative
+            url = relative if relative.lower().startswith(("http://", "https://")) else base_url + relative
             try:
                 data = fetch(url)
                 with open(destination, "wb") as handle:
@@ -560,7 +620,9 @@ def localize_images(markdown, body, base_url, asset_dir, asset_root, delay):
             with open(destination, "rb") as handle:
                 digest = hashlib.md5(handle.read()).hexdigest()
         manifest.append({"file": name, "md5": digest, "bytes": os.path.getsize(destination)})
-        markdown = markdown.replace(relative, "{}/{}".format(asset_root, name))
+        markdown = rewrite_markdown_target(
+            markdown, relative, "{}/{}".format(asset_root, name)
+        )
         time.sleep(delay)
     return markdown, manifest
 

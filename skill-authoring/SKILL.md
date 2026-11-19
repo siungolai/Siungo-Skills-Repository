@@ -2,8 +2,8 @@
 name: skill-authoring
 description: 本仓库自建 skill 的创建与修改规范：新建 skill、改写 SKILL.md、增改 references/ 或 scripts/、更新 README 技能表、把技能同步到 ~/.dsh/skills/ 时使用。
 agent_created: true
-version: 1.1.3
-last_updated: 2026-11-15
+version: 1.1.4
+last_updated: 2026-11-19
 author: siungolai
 ---
 

@@ -2,7 +2,7 @@
 name: reference-archive
 description: 把厂商文档站、上游仓库与发布资产固化成可离线查阅、可回溯的硬件/开源项目参考归档：抓取文档页转 Markdown 并本地化图片、镜像上游仓库与发布固件、交叉核对硬件事实并标注不确定项、官方更新后做增量对账时使用。
 agent_created: true
-version: 1.1.0
+version: 1.2.0
 last_updated: 2026-11-19
 author: siungolai
 ---
