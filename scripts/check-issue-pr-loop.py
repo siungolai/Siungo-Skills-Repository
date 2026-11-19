@@ -49,6 +49,7 @@ REQUIRED = {
         "基线之后",
         "跨技能读盘回退：优先",
         "默认代用户执行",
+        "并行度自主裁量",
         "禁止绕过 PR",
     ),
     "issue-pr-loop/CONTEXT.md": (
@@ -68,6 +69,7 @@ REQUIRED = {
     "issue-pr-loop/references/flow.md": (
         "feat / fix / refactor / docs / test / chore",
         "同文件永不同层",
+        "并行度自主裁量",
         "scripts/check-issue-pr-loop.py",
         "scripts/review_prompt.py",
     ),
