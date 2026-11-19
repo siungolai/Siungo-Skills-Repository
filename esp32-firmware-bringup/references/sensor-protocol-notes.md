@@ -130,4 +130,4 @@ uint32_t period = hasReading ? SAMPLE_MS
 - `[tick N]`：每个屏幕刷新节拍打一次，报当前读数状态、年龄与累计失败。
 - `t=Ns,...`：每次采样打一次（成功失败都打），固定字段 CSV，`grep -c 'ok=1'` 直接统计成功率。
 
-日志刻意用 ASCII 不用中文：UTF-8 到部分串口工具变乱码，而故障信息恰是唯一线索。
+日志约定见 `SKILL.md` §5 / `diagnostic-tools.md` §五；本探针只需打印 DHT 专属行名。

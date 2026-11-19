@@ -2,8 +2,8 @@
 name: deploy-report
 description: 部署审阅门：部署/上线/发布到服务器/更新线上/回滚前，先展示部署方案（变更总揽、执行步骤、备份与回滚路径、验证计划）供用户确认，确认后才执行上线与验收；失败不自动回滚，停下报告后等用户指令。
 agent_created: true
-version: 1.1.1
-last_updated: 2026-10-03
+version: 1.1.2
+last_updated: 2026-11-19
 author: siungolai
 ---
 
@@ -11,7 +11,7 @@ author: siungolai
 
 > ⚠️ **触发加载检查**：收到任何「部署 / 上线 / 发布 / 更新线上 / 回滚」类意图时，**先确认本技能已加载**——若本技能不在当前会话的可用技能列表里（技能快照可能早于本技能安装或更新），先用当前环境的技能加载机制加载它，然后按其流程执行。切忌在未加载技能的情况下直接动服务器。
 
-定位：与 commit-report 互补——commit-report 管「变更进入仓库」，本技能管「变更进入线上」。核心是**强制审阅门**：用户看到部署方案全文（变更总揽、执行步骤、备份与回滚路径、验证计划）并明确确认后，才执行上线；失败时停下报告、绝不自动回滚。版本历史见 [`references/version.md`](references/version.md)。
+定位：与 commit-report 互补——commit-report 管「变更进入仓库」，本技能管「变更进入线上」；**强制审阅门**与失败纪律见 §3/§6。版本历史见 [`references/version.md`](references/version.md)。
 
 ## 1. 目标定位与前置自检
 

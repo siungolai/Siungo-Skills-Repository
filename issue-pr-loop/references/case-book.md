@@ -47,6 +47,6 @@
 
 - 实录用的是单一仓库的并行队列；本仓库是**技能仓库**，并行度本来就低，所以 `references/flow.md` 的「分层规则」一节在本仓库通常是「一轮只有一张单」——规则留着，不要因为平时用不上就删掉；
 - 实录的门禁是它的构建与真机流程；本仓库的门禁是 `skill-authoring/scripts/check-skills.py`（结构检查）+ `scripts/check-issue-pr-loop.py`（语义一致性 + 对账）+ `scripts/gates.json` 其余项；`deploy-report/references/publish-check.md` 是发布前敏感信息清单，不是可执行门禁，不进门禁清单。
-- 对 `skill-authoring` 的引用补路径回退说明：跨技能读盘回退：优先 `~/.dsh/skills/<name>/SKILL.md`，不存在时读仓库内的 `<name>/SKILL.md`；两者都没有则报告并转人工确认。
+- 对 `skill-authoring` 的引用补路径回退说明：跨技能读盘回退口径见 `SKILL.md` 定位段（不在此重复）。
 - 实录的分支命名是 `type/378-slug`；本仓库沿用，`type` 取 feat / fix / refactor / docs / test / chore 六种（见 `references/flow.md` 的「分层规则」一节）；
 - 实录有维护者兜底；本仓库没有，所以 `SKILL.md` §11 的三层机制（平台保护 / 钩子 / 对账）不是可选项。

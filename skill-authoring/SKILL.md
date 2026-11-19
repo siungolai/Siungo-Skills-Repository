@@ -2,7 +2,7 @@
 name: skill-authoring
 description: 本仓库自建 skill 的创建与修改规范：新建 skill、改写 SKILL.md、增改 references/ 或 scripts/、更新 README 技能表、把技能同步到 ~/.dsh/skills/ 时使用。
 agent_created: true
-version: 1.1.4
+version: 1.1.5
 last_updated: 2026-11-19
 author: siungolai
 ---
@@ -31,7 +31,7 @@ author: siungolai
 
 三件事各有归属，不要串：
 
-- **本技能**：技能的物理约定——目录与命名、frontmatter、骨架、章节编号与引用、版本记录、公开前门槛、副本同步。
+- **本技能**：技能的物理约定（细节见定位段与 `references/standard.md`）。
 - **`writing-for-agents`**（上游技能）：文档的写法——context pointer 怎么措辞、材料该内联还是下放、完成判据怎么写、leading word、pruning。遇到「这句话该怎么写」就加载它。
 - **`domain-modeling`**（上游技能）：技能里出现的术语与决策——术语进 `CONTEXT.md`（只定义语言），难以反转的决策进 `docs/adr/`。
 

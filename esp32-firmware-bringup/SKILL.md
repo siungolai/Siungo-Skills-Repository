@@ -2,8 +2,8 @@
 name: esp32-firmware-bringup
 description: ESP32-S3 固件 bringup 与硬件诊断：给新板子或新器件做 bringup、接屏或传感器后跑不通、I2C 器件没应答、节拍跑偏时使用。
 agent_created: true
-version: 1.0.0
-last_updated: 2026-10-15
+version: 1.0.1
+last_updated: 2026-11-19
 author: siungolai
 ---
 
@@ -18,14 +18,14 @@ author: siungolai
 | 情形 | 动作 |
 |---|---|
 | 「给这块板子 / 这个新器件做 bringup」「接了个新屏 / 新传感器 / 多路复用器，先跑通再写功能」 | 走 §2 全流程 |
-| 「I2C 器件没应答」「扫不到地址」「屏不亮」 | 走 §5 诊断阶梯，**先物理层后固件** |
-| 「节拍跑偏了」「掉个外设刷新就卡」 | 走 §2.4.2 离线保护 + §4 非阻塞范式 |
+| 「I2C 器件没应答」「扫不到地址」「屏不亮」 | 走 §4 诊断阶梯，**先物理层后固件** |
+| 「节拍跑偏了」「掉个外设刷新就卡」 | 走 §2.4.2 离线保护 + §2.4.1 非阻塞范式 |
 | 「DHT11 / SSD1306 / PCA9548A / 1602 怎么接怎么驱动」 | 先读 §2.4.3 器件专项路由表里的 reference |
 | 「帮我写个 ESP32 上位机」「这块板子用什么库」 | 不属于本技能；本技能只覆盖已在本机实测过的器件与接线 |
 
 ## 2. 标准流程
 
-六个阶段串行推进，前一阶段的判据不满足不进下一阶段。跳过 bringup 去写上层代码，是本文档要防的主要失败模式。
+五个阶段串行推进，前一阶段的判据不满足不进下一阶段。跳过 bringup 去写上层代码，是本文档要防的主要失败模式。
 
 ### 2.1 需求冻结
 
@@ -81,7 +81,7 @@ author: siungolai
 | SSD1306 OLED | [`references/ssd1306-driver-notes.md`](references/ssd1306-driver-notes.md) |
 | DHT11 / 单总线传感器 | [`references/sensor-protocol-notes.md`](references/sensor-protocol-notes.md) |
 | PCA9548A / 多路复用 | [`references/display-multiplexer-notes.md`](references/display-multiplexer-notes.md) |
-| 1602 + PCF8574（5V 器件） | [`references/i2c-bus-cookbook.md`](references/i2c-bus-cookbook.md) §6–§8 |
+| 1602 + PCF8574（5V 器件） | [`references/i2c-bus-cookbook.md`](references/i2c-bus-cookbook.md) 「1602 假象 / 5V 电平 / PCF8574 速查」三节 |
 | 板载 WS2812 / RGB 灯 | [`references/hardware-facts.md`](references/hardware-facts.md) §4 |
 | I2C 总线通用规则 | [`references/i2c-bus-cookbook.md`](references/i2c-bus-cookbook.md) |
 
@@ -123,15 +123,7 @@ author: siungolai
 | 串口 | COM4，115200 | VID:PID 303A:1001 |
 | 编译权限 | 需 `danger-full-access` | `workspace-write` 下 `platforms.lock` 写入被拒 |
 
-## 4. 非阻塞时序与节拍解耦
-
-完整范式见 §2.4.1，这里是三条最容易写错的：
-
-1. **`last += PERIOD` 不写 `last = now`**——后者每轮漏掉的时间差会累积，一小时能漂出秒级；
-2. **`millis()` 每轮只读一次**——循环里多处采样，各处的「现在」不是同一个现在；
-3. **无符号减法比较 `now - last >= PERIOD`**——天然兼容约 49.7 天回绕，不需要写绕回判断。
-
-## 5. 诊断优先：先物理层后固件
+## 4. 诊断优先：先物理层后固件
 
 **顺序即纪律**：通断确认之前，地址扫描与日志全是无效劳动。
 
@@ -148,9 +140,9 @@ author: siungolai
 
 **判读会骗人**（真实教训）：1602 背包模块曾呈现「背光亮 + 两线 HIGH + 全段无应答」，收敛到「模块硬件故障」。反证是把背包整块拔下，**背光仍亮、两线仍 HIGH**——背光由背包上 PCF8574 的 P7 驱动，器件真拔掉不可能还亮。真相是排针没插到底或 16 针并口虚接。**「背光亮 = 供电到位」不成立**，所以通断排在仪器判读之前。
 
-诊断工具台、七个工具的用法与日志判读约定见 [`references/diagnostic-tools.md`](references/diagnostic-tools.md)。
+诊断工具台、五个工具的用法与日志判读约定见 [`references/diagnostic-tools.md`](references/diagnostic-tools.md)。
 
-## 6. 日志可观测与凭据约定
+## 5. 日志可观测与凭据约定
 
 - 串口日志用 ASCII 不用中文（UTF-8 到部分串口工具乱码，而故障时这是唯一线索）；
 - 无效读数写 `--` 不写 0（0°C 是合法读数，写 0 就跟没读到混在一起）；
@@ -160,21 +152,21 @@ author: siungolai
 - 诊断工具放 `tools/` 独立 platformio 工程（同一 `src/` 两个 `setup()`/`loop()` 链接失败）；
 - 凭据写 `**/src/secrets.h` 并 gitignore（`**/` 前缀必须有，否则被锚定到仓库根等于没忽略），只留 `secrets.h.example`。
 
-## 7. 安全边界（硬性，任何路径下均适用）
+## 6. 安全边界（硬性，任何路径下均适用）
 
 1. **先接线后上电**——S3 IO 是 3.3V，直短 GND/3V3 烧 IO。
 2. **5V 器件的 SDA/SCL 先量再连**——1602 背包接 5V 时上拉把总线拉到 5V，ESP32-S3 IO 非 5V 耐受（绝对最大 VDD+0.3V ≈ 3.6V），直连经 ESD 二极管灌电流慢性损坏引脚，不当场冒烟；上电前用万用表量背包 SDA/SCL 对 GND 空闲电压，应等于转换模块 LV 侧 3.3V，量到 5V 先别连。跑一阵 IO 失灵/发热 = 立即断电。
 3. **不重复加上拉**——上下游模块通常已自带，再补 4.7k 会把等效阻值压到逼近从机 sink 极限（SSD1306 ≈ 3mA）。
 4. **不占用 GPIO19/20、不在 GPIO1/2 上接 I2C**——前者失去 USB 串口，后者实测全段超时。
-5. **不改已实测可用的接线与地址**——本文件记录的是实测事实，改动前重新走 §5 诊断阶梯。
+5. **不改已实测可用的接线与地址**——本文件记录的是实测事实，改动前重新走 §4 诊断阶梯。
 6. **台架压缩比例验完必须复位为 1**——带着 `TIME_SCALE` 进长跑，验收数字是假的。
 7. **未实测的器件状态标「待 bringup 验证」**——把规格书参数写成实测，会让读者误以为验证过。
 
-## 8. 完成后报告
+## 7. 完成后报告
 
 1. **bringup 判据逐条对照**：地址应答 / 单路不互扰 / 拔外设节拍不漂移，各给出实测读数；
 2. **帧率与漂移实测值**（如 1.0000 tick/秒、45 tick/45 秒），以及长跑时长；
 3. **资源占用**：RAM/Flash 实测值与余量（口径见 hardware-facts §5）；
 4. **未解决项**：仍标「待 bringup 验证」的器件与原因；
-5. **诊断结论**：若走过 §5 阶梯，说明最终卡在哪一层、判据是什么；
+5. **诊断结论**：若走过 §4 阶梯，说明最终卡在哪一层、判据是什么；
 6. **凭据状态**：确认 `secrets.h` 未入库、只留 `.example`。

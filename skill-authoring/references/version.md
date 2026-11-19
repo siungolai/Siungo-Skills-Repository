@@ -4,6 +4,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| 1.1.5 | 2026-11-19 | 去冗余：standard.md「check-skills.py 第 4、5、6 项」失效引用改为「运行无 FAIL」；checklist 删能力边界第三次复述；SKILL.md 职责清单压成指针。 |
 
 | 1.1.4 | 2026-11-19 | `check-skills.py` 的 README 目录结构块校验在缺节时改为记 D5 FAIL，不再因 `split("```")[1]` 抛 IndexError 把门禁打崩。 |
 | 1.1.3 | 2026-11-15 | 说明 check-skills.py 能力边界，要求项目级语义门禁与人工核对跨文件口径 |

@@ -2,8 +2,8 @@
 name: commit-auto
 description: 节奏驱动的自动提交：在已获会话级授权的会话中，每闭合一个提交单元（一个功能/一个阶段）就落一笔提交，不逐次打断；判定时机与范围后，读盘复用 commit-report 的审阅门流程生成并执行提交。push 不在范围内。未获会话级授权时不触发，也不替代 commit-report。
 agent_created: true
-version: 1.4.1
-last_updated: 2026-10-03
+version: 1.4.2
+last_updated: 2026-11-19
 author: siungolai
 ---
 
@@ -90,7 +90,7 @@ author: siungolai
 5. 未获授权，或用户要求逐笔确认、要求先看文案时，停在 `commit-report` §3 的两区展示等回应；
 6. 本技能不触发 push。
 
-**已知陷阱（Windows）**：`.git/COMMIT_EDITMSG` 带 Hidden 属性时，Git for Windows 报 `fatal: could not open '.git/COMMIT_EDITMSG': Permission denied`，提交无法进行——`attrib -h .git\COMMIT_EDITMSG` 后重试即可。iCloud／外置盘同步过的仓库常带这个属性。
+**已知陷阱（Windows）**：`.git/COMMIT_EDITMSG` 带 Hidden 属性导致 `Permission denied` 的故障与处置见 commit-report/SKILL.md §5 第 6 项。
 
 ## 5. 硬红线
 

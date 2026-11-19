@@ -2,7 +2,7 @@
 name: commit-report
 description: Git 提交审阅门：直接调用本技能做 commit/push/提交/推送/查看待提交改动前，先展示变更总揽与 commit 信息全文，经用户明确确认后才执行提交（可选项推送）；PR 通道内的开 PR、合并、推功能分支按 issue-pr-loop 默认授权执行。
 agent_created: true
-version: 2.1.0
+version: 2.1.1
 last_updated: 2026-11-19
 author: siungolai
 ---
@@ -11,7 +11,7 @@ author: siungolai
 
 > ⚠️ **触发加载检查**：收到任何「提交 / commit / 推送 / push / 先看看改了什么再提交」类意图时，**先确认本技能已加载**——若本技能不在当前会话的可用技能列表里（技能快照可能早于本技能安装或更新），先用当前环境的技能加载机制加载它，然后按其流程执行。切忌在未加载技能的情况下直接提交。
 
-定位：与内置 /commit 命令互补——本技能以**强制审阅门**为核心，用户看到变更总揽与 commit 信息全文并明确确认后，才执行提交。**push 默认不执行**，仅在用户明确选择时进行。本审阅门约束的是直接调用本技能的提交；PR 通道内的开 PR、合并、推送功能分支由 issue-pr-loop 默认代执行（v2.2.0 授权前提），不受本条约束，禁直推主干、禁绕过 PR、禁 force push 主干的护栏不变。版本历史见 [`references/version.md`](references/version.md)。
+定位：与内置 /commit 命令互补——本技能以**强制审阅门**为核心，用户看到变更总揽与 commit 信息全文并明确确认后，才执行提交。**push 默认不执行**，仅在用户明确选择时进行。本审阅门约束的是直接调用本技能的提交；PR 通道内的开 PR、合并、推送功能分支由 issue-pr-loop 默认代执行（见 issue-pr-loop/SKILL.md 动作授权前提段），不受本条约束，禁直推主干、禁绕过 PR、禁 force push 主干的护栏不变。版本历史见 [`references/version.md`](references/version.md)。
 
 ## 1. 目标仓库定位与前置自检
 
